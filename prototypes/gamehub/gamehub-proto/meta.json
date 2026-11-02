@@ -3,10 +3,10 @@
   "title": "Gamehub_proto",
   "feature": "gamehub",
   "prototype": "gamehub-proto",
-  "version": 1,
-  "updated_at": "2026-11-02T11:14:44.834+00:00",
-  "sha256": "6911121fa4f5c80c5a802401acec71aaa5d41fd1b22a20452f69db65b2888e1b",
-  "size": 4597974,
+  "version": 2,
+  "updated_at": "2026-11-02T11:33:41.244+00:00",
+  "sha256": "7c9867531df07773ba5bebbcb6d97bab89c234cbf75700a98d21334c1e5b8138",
+  "size": 4598531,
   "description": "Геймхаб: задания, карточки активностей, награды",
   "figma_url": "https://www.figma.com/design/pydeaVSUhfdsXfTAByieqc/Meta---Profile?node-id=14099-127439"
 }
