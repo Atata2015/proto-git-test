@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-11-05T14:13:06.493+00:00",
+  "title": "Юзер-тест (пилот, демо)",
+  "feature": "test-prototype-6",
+  "prototype": "ut-pilot",
+  "version": 1,
+  "updated_at": "2026-11-05T14:13:06.493+00:00",
+  "sha256": "973565efbd288100efb95097836e681a44f6b00795815bbd767b3643b01de8ef",
+  "size": 253491,
+  "description": "Test-prototype-6 со встроенным опросником и логированием тапов. Демо-режим: ответы не отправляются, в конце — скачать JSON.",
+  "figma_url": "https://www.figma.com/design/5xwdEKxqLM6H9DbqfvGwu3/-SYSTEM--UI-Kit--Test-?node-id=4918-8006"
+}
