@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Юзер-тесты</title>
+<!--
+  Шаблон страницы раздела «Юзер-тесты» каталога прототипов (<base>/_tests/index.html).
+  Публикатор (UserTests-Pipeline, skills/user-test/scripts/publish_test.py) заменяет единственную метку данных
+  внутри <script id="tests-data"> на JSON с данными страницы, заменив в JSON каждое "</" на "<\/". Вся вёрстка — здесь.
+  Вид согласован с общим шаблоном каталога (_templates/index-template.html).
+  Шаблон-версия: 1
+-->
+<style>
+:root{--bg:#f6f6f4;--card:#fff;--ink:#1d1d1b;--muted:#6b6b66;--line:#e3e2dd;--accent:#3355ff;--chip:#eef0ff;
+--live:#1f8a4c;--live-bg:#e3f4ea;--pilot:#9a6400;--pilot-bg:#fbf0d9;--draft:#6b6b66;--draft-bg:#ecebe7;--closed:#6b6b66;--closed-bg:#ecebe7;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#141413;--card:#1e1e1c;--ink:#f0efe9;--muted:#a3a29b;--line:#2f2f2c;--accent:#8ea2ff;--chip:#262a40;
+--live:#7ad7a0;--live-bg:#1d3326;--pilot:#f0c070;--pilot-bg:#3a2f18;--draft:#a3a29b;--draft-bg:#2a2a27;--closed:#a3a29b;--closed-bg:#2a2a27;color-scheme:dark}}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+main{max-width:760px;margin:0 auto;padding:28px 18px 48px}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.crumbs{font-size:14px;color:var(--muted);margin-bottom:8px}
+h1{font-size:28px;line-height:1.2;margin:0 0 6px}.lead{color:var(--muted);margin:0 0 24px}
+h2.group{font-size:13px;font-weight:600;color:var(--muted);margin:24px 0 10px;text-transform:uppercase;letter-spacing:.04em}
+.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:0 0 12px}
+.card h3{font-size:18px;margin:0 0 4px}.meta{font-size:13px;color:var(--muted)}
+.desc{margin:6px 0 0}.proto{margin:6px 0 0;font-size:14px;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+.btn{display:inline-block;padding:8px 14px;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;font-size:14px}
+@media (prefers-color-scheme:dark){.btn{color:#111}}
+.chips{margin-top:8px}
+.chip{display:inline-block;border-radius:8px;padding:2px 10px;margin:0 6px 6px 0;font-size:13px;background:var(--chip)}
+.st-live{background:var(--live-bg);color:var(--live);font-weight:600}.st-pilot{background:var(--pilot-bg);color:var(--pilot);font-weight:600}
+.st-draft{background:var(--draft-bg);color:var(--draft)}.st-closed{background:var(--closed-bg);color:var(--closed)}
+.empty{color:var(--muted)}footer{margin-top:32px;font-size:12px;color:var(--muted)}
+.noscript{color:var(--muted)}
+</style>
+</head>
+<body>
+<main id="app"><noscript><p class="noscript">Для просмотра страницы включите JavaScript.</p></noscript></main>
+<script id="tests-data" type="application/json">{"schema":1,"page":"tests","catalog_title":"Прототипы (тест)","link_style":"dir","generated_at":"2026-11-10T08:46:15.724+00:00","tests":[{"title":"Тест: хаб заданий","status":"draft","mode":"shared","demo":true,"scenarios":4,"prototype":{"feature":"gamehub","prototype":"Gamehub_proto","version":1},"created_at":"2026-11-10T08:46:15.715+00:00","updated_at":"2026-11-10T08:46:15.715+00:00","version":1,"slug":"gamehub-demo-01"}]}</script>
+<script>
+(function () {
+  "use strict";
+  var app = document.getElementById("app");
+  var data;
+  try { data = JSON.parse(document.getElementById("tests-data").textContent); }
+  catch (e) { app.textContent = "Не удалось прочитать данные страницы."; return; }
+
+  var fileLinks = data.link_style === "file";
+  function href(path) { path = path.replace(/\/+$/, ""); return path + (fileLinks ? "/index.html" : "/"); }
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function has(v) { return v !== null && v !== undefined && v !== ""; }
+  function fmtDate(iso) {
+    if (!has(iso)) return "";
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso));
+    return m ? m[3] + "." + m[2] + "." + m[1] : String(iso);
+  }
+  function plural(n, one, few, many) {
+    if (n % 10 === 1 && n % 100 !== 11) return one;
+    if (n % 10 >= 2 && n % 10 <= 4 && !(n % 100 >= 12 && n % 100 <= 14)) return few;
+    return many;
+  }
+
+  var STATUS = { live: "Идёт", pilot: "Пилот", draft: "Черновик", closed: "Закрыт" };
+  var GROUPS = [["live", "Идут"], ["pilot", "Пилот"], ["draft", "Черновики"], ["closed", "Закрытые"]];
+  var MODE = { shared: "общий прототип", isolated: "изолированные флоу" };
+  var catalogTitle = has(data.catalog_title) ? data.catalog_title : "Прототипы";
+  var tests = (data.tests || []).slice();
+
+  document.title = "Юзер-тесты";
+  var crumbs = el("div", "crumbs"); var up = el("a", null, catalogTitle);
+  up.href = fileLinks ? "../index.html" : "../"; crumbs.appendChild(up); app.appendChild(crumbs);
+  app.appendChild(el("h1", null, "Юзер-тесты"));
+  app.appendChild(el("p", "lead", "Прототипы со встроенными заданиями и опросником. Ссылку из карточки получают респонденты."));
+
+  if (!tests.length) app.appendChild(el("p", "empty", "Пока ни одного теста."));
+
+  function renderCard(t) {
+    var card = el("div", "card");
+    card.appendChild(el("h3", null, has(t.title) ? t.title : t.slug));
+    var bits = ["v" + (has(t.version) ? t.version : 1)];
+    if (has(t.scenarios)) bits.push(t.scenarios + " " + plural(t.scenarios, "задание", "задания", "заданий"));
+    if (has(t.mode)) bits.push(MODE[t.mode] || t.mode);
+    if (has(t.updated_at)) bits.push("обновлено " + fmtDate(t.updated_at));
+    card.appendChild(el("div", "meta", bits.join(" · ") + " · " + t.slug));
+    var chips = el("div", "chips");
+    var st = has(t.status) ? t.status : "draft";
+    chips.appendChild(el("span", "chip st-" + st, STATUS[st] || st));
+    if (t.demo) chips.appendChild(el("span", "chip", "демо-режим: ответы не отправляются"));
+    if (has(t.close_at)) chips.appendChild(el("span", "chip", "до " + fmtDate(t.close_at)));
+    card.appendChild(chips);
+    if (has(t.description)) card.appendChild(el("p", "desc", t.description));
+    var p = t.prototype;
+    if (p && (has(p.feature) || has(p.prototype))) {
+      var line = el("p", "proto", "Прототип: ");
+      var name = (has(p.feature_title) ? p.feature_title : p.feature) + " / " + (has(p.title) ? p.title : p.prototype) +
+                 (has(p.version) ? " · v" + p.version : "");
+      if (p.in_catalog) { var a = el("a", null, name); a.href = href("../" + p.feature + "/" + p.prototype); line.appendChild(a); }
+      else line.appendChild(document.createTextNode(name));
+      card.appendChild(line);
+    }
+    var row = el("div", "row");
+    var open = el("a", "btn", "Открыть тест"); open.href = href(t.slug); row.appendChild(open);
+    card.appendChild(row);
+    return card;
+  }
+
+  GROUPS.forEach(function (g) {
+    var list = tests.filter(function (t) { return (has(t.status) ? t.status : "draft") === g[0]; });
+    if (!list.length) return;
+    list.sort(function (a, b) { return String(b.updated_at || "").localeCompare(String(a.updated_at || "")); });
+    app.appendChild(el("h2", "group", g[1]));
+    list.forEach(function (t) { app.appendChild(renderCard(t)); });
+  });
+  app.appendChild(el("footer", null, "Страница создаётся автоматически при публикации теста. Ручные правки будут перезаписаны."));
+})();
+</script>
+</body>
+</html>

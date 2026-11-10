@@ -87,6 +87,8 @@ h1{font-size:28px;line-height:1.2;margin:0 0 6px}.lead{color:var(--muted);margin
     document.title = catalogTitle;
     app.appendChild(el("h1", null, catalogTitle));
     app.appendChild(el("p", "lead", "Все опубликованные прототипы по фичам."));
+    /* ut-tests-link: ссылка на раздел юзер-тестов (UserTests-Pipeline, skills/user-test/scripts/publish_test.py) */
+    var utl = el("p", "lead"); var uta = el("a", null, "Юзер-тесты →"); uta.href = href("_tests"); utl.appendChild(uta); app.appendChild(utl);
     features.sort(function (a, b) { return lastUpdate(b).localeCompare(lastUpdate(a)) || String(a.slug).localeCompare(String(b.slug)); });
     if (!features.length) { app.appendChild(el("p", "empty", "Пока ничего не опубликовано.")); }
     features.forEach(function (f) {
