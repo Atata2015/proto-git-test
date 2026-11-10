@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-11-10T12:13:14.021+00:00",
+  "title": "Prototype_2",
+  "feature": "recommended-tasks",
+  "prototype": "prototype-2",
+  "version": 1,
+  "updated_at": "2026-11-10T12:13:14.021+00:00",
+  "sha256": "4dafbb313f9cf071c7277766efcde365fa92c7878b62486766be6e3e7b4fd288",
+  "size": 3810413,
+  "description": "Планшет рекомендованных заданий: отслеживание задания на HUD, счётчики ежедневных и еженедельных задач и целей с подсказками, получение награды.",
+  "figma_url": "https://www.figma.com/design/5xwdEKxqLM6H9DbqfvGwu3/-SYSTEM--UI-Kit--Test-?node-id=4657-1851"
+}
