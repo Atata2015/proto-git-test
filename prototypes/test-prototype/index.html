@@ -37,7 +37,7 @@ h1{font-size:28px;line-height:1.2;margin:0 0 6px}.lead{color:var(--muted);margin
 </head>
 <body>
 <main id="app"><noscript><p class="noscript">Для просмотра страницы включите JavaScript.</p></noscript></main>
-<script id="prototypes-data" type="application/json">{"schema":1,"page":"feature","feature":"test-prototype","catalog_title":"Прототипы (тест)","link_style":"dir","generated_at":"2026-11-10T08:46:16.233+00:00","features":[{"slug":"test-prototype","title":"Test-prototype_2","created_at":"2026-10-30T10:31:23.514+00:00","updated_at":"2026-10-30T10:31:23.514+00:00","prototypes":[{"slug":"main","title":"Test-prototype_2","version":1,"figma_url":"https://www.figma.com/design/5xwdEKxqLM6H9DbqfvGwu3/-SYSTEM--UI-Kit--Test-?node-id=4158-22","created_at":"2026-10-30T10:31:23.514+00:00","updated_at":"2026-10-30T10:31:23.514+00:00"}]}]}</script>
+<script id="prototypes-data" type="application/json">{"schema":1,"page":"feature","feature":"test-prototype","catalog_title":"Прототипы (тест)","link_style":"dir","generated_at":"2026-11-10T09:26:47.694+00:00","features":[{"slug":"test-prototype","title":"Test-prototype_2","created_at":"2026-10-30T10:31:23.514+00:00","updated_at":"2026-10-30T10:31:23.514+00:00","prototypes":[{"slug":"main","title":"Test-prototype_2","version":1,"figma_url":"https://www.figma.com/design/5xwdEKxqLM6H9DbqfvGwu3/-SYSTEM--UI-Kit--Test-?node-id=4158-22","created_at":"2026-10-30T10:31:23.514+00:00","updated_at":"2026-10-30T10:31:23.514+00:00"}]}]}</script>
 <script>
 (function () {
   "use strict";
@@ -86,9 +86,9 @@ h1{font-size:28px;line-height:1.2;margin:0 0 6px}.lead{color:var(--muted);margin
   function renderCatalog() {
     document.title = catalogTitle;
     app.appendChild(el("h1", null, catalogTitle));
+    /* ut-tabs: вкладки «Прототипы | Юзер-тесты» (UserTests-Pipeline, skills/user-test/scripts/publish_test.py) */
+    (function () { var st = document.createElement("style"); st.textContent = ".ut-tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:4px 0 16px}.ut-tab{flex:1;text-align:center;padding:10px 12px;font-size:16px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;text-decoration:none}a.ut-tab:hover{color:var(--ink);text-decoration:none}.ut-tab.on{color:var(--ink);border-bottom-color:var(--accent)}"; document.head.appendChild(st); var nav = el("nav", "ut-tabs"); nav.appendChild(el("span", "ut-tab on", "Прототипы")); var t = el("a", "ut-tab", "Юзер-тесты"); t.href = href("_tests"); nav.appendChild(t); app.appendChild(nav); })();
     app.appendChild(el("p", "lead", "Все опубликованные прототипы по фичам."));
-    /* ut-tests-link: ссылка на раздел юзер-тестов (UserTests-Pipeline, skills/user-test/scripts/publish_test.py) */
-    var utl = el("p", "lead"); var uta = el("a", null, "Юзер-тесты →"); uta.href = href("_tests"); utl.appendChild(uta); app.appendChild(utl);
     features.sort(function (a, b) { return lastUpdate(b).localeCompare(lastUpdate(a)) || String(a.slug).localeCompare(String(b.slug)); });
     if (!features.length) { app.appendChild(el("p", "empty", "Пока ничего не опубликовано.")); }
     features.forEach(function (f) {

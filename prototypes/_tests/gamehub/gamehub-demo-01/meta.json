@@ -1,5 +1,6 @@
 {
   "test_id": "gamehub-demo-01",
+  "feature": "gamehub",
   "title": "Тест: хаб заданий",
   "status": "draft",
   "mode": "shared",
@@ -10,9 +11,9 @@
     "prototype": "Gamehub_proto",
     "version": 1
   },
-  "version": 1,
+  "version": 2,
   "created_at": "2026-11-10T08:46:15.715+00:00",
-  "updated_at": "2026-11-10T08:46:15.715+00:00",
+  "updated_at": "2026-11-10T09:26:46.080+00:00",
   "sha256": "9648c50591236f94f84dc7baff31176f8aa5ed0a4a529824463f89367e259bd5",
   "size": 4631045,
   "history": [
