@@ -3,7 +3,7 @@
   "feature": "recommended-tasks",
   "title": "Тест: рекомендованные задания",
   "description": "Прогон пайплайна на фиче «Рекомендованные задания»: находимость планшета, отслеживание задания на HUD, понимание счётчиков. Респондент — оператор.",
-  "status": "draft",
+  "status": "pilot",
   "mode": "shared",
   "demo": false,
   "endpoint": "https://script.google.com/macros/s/AKfycbzdO-bBaLGWyMNOub8NUtQcFH6Esfj6h8TtMNtH-Iqel0TVFU7FUFgBjuuTcbtEhl8IGw/exec",
@@ -18,13 +18,17 @@
   },
   "version": 1,
   "created_at": "2026-11-10T12:37:19.909+00:00",
-  "updated_at": "2026-11-10T12:37:19.909+00:00",
+  "updated_at": "2026-11-10T12:39:33.317+00:00",
   "sha256": "6d7cfee2348b1dc3e8417cf6032fb6ad191e855322cd6d252331889992e164b6",
   "size": 3844168,
   "history": [
     {
       "status": "draft",
       "at": "2026-11-10T12:37:19.909+00:00"
+    },
+    {
+      "status": "pilot",
+      "at": "2026-11-10T12:39:33.317+00:00"
     }
   ]
 }
