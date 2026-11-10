@@ -368,6 +368,7 @@ window.__proto.reset = function(sid){
 go(SPEC.start);
 showFS();
 </script>
+<!-- ut-shell:begin -->
 <style>
 /* Оболочка юзер-теста */
 html.ut #fs{display:none!important}
@@ -423,7 +424,7 @@ html.ut-panel #ut-panel{display:block}
 @keyframes ut-shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 @media (prefers-reduced-motion:reduce){.shake{animation:none}#ut-toast{transition:none}}
 </style>
-<script>const UT_CONFIG = {"test_id": "gamehub-demo-01", "title": "Тест: хаб заданий", "prototype": {"feature": "gamehub", "prototype": "Gamehub_proto", "version": 1}, "endpoint": "", "token": "gamehub-demo", "close_at": "", "intro": {"title": "Добро пожаловать на тест", "text": "Вы пройдёте 4 коротких задания в прототипе игры. Подсказок не будет — если что-то не получается, это нормально: мы проверяем интерфейс, а не вас.\n\nПравила:\n• проходите задания по порядку;\n• не перезагружайте страницу;\n• после каждого задания ответьте на пару вопросов.\n\nВ центре экрана игры может быть серая плашка «Завершить задание/цель» — это служебная кнопка прототипа, в игре её нет. Не обращайте на неё внимания.\n\nПрототип работает в горизонтальной ориентации.", "ask_name": true}, "scenarios": [{"id": "S1", "title": "Найти задания", "task": "Вы зашли в игру и хотите узнать, какие задания сейчас можно выполнить. Найдите их.", "hypotheses": ["H1"], "start": "hud_prototype", "success": {"screen": "game_hub"}, "misclick_followup": true, "questions": [{"id": "S1_Q1", "hyp": "H1", "type": "tap", "image": {"screen": "hud_prototype"}, "text": "Где на экране игры вы в первую очередь стали бы искать задания? Нажмите на это место."}, {"id": "S1_Q2", "hyp": "H1", "type": "scale", "min": 1, "max": 5, "labels": ["Очень сложно", "Очень легко"], "text": "Насколько легко было найти задания?"}]}, {"id": "S2", "title": "Забрать готовую награду", "task": "За одно из заданий вам уже положена награда. Заберите её.", "hypotheses": ["H2"], "start": "hud_prototype", "success": {"overlay": "reward_popup"}, "misclick_followup": true, "questions": [{"id": "S2_Q1", "hyp": "H2", "type": "choice", "text": "Что вы получили в награду?", "options": ["Кейсы (сундуки)", "Деньги", "Опыт", "Не заметил(а)"]}, {"id": "S2_Q2", "hyp": "H2", "type": "text", "recall": true, "optional": true, "text": "Как вы поняли, за какое задание положена награда?"}]}, {"id": "S3", "title": "Выполнить задание «Используй эмоцию»", "task": "Найдите задание, в котором нужно использовать эмоцию. Выполните его и заберите награду.", "hypotheses": ["H3", "H4"], "start": "hud_prototype", "success": {"overlay": "reward_popup", "state": {"t5": "false", "a5": "false"}, "via": ["hud_prototype/emote"]}, "misclick_followup": true, "questions": [{"id": "S3_Q1", "hyp": "H3", "type": "text", "recall": true, "text": "Что, по-вашему, произошло, когда вы нажали на карточку задания?"}, {"id": "S3_Q2", "hyp": "H4", "type": "choice", "text": "Было ли понятно, что карточки с заданиями можно листать вбок?", "options": ["Сразу понял(а)", "Понял(а) не сразу", "Не понял(а)", "Не листал(а)"]}, {"id": "S3_Q3", "hyp": "H3", "type": "scale", "min": 1, "max": 5, "labels": ["Очень сложно", "Очень легко"], "text": "Насколько легко было выполнить задание и забрать награду?"}]}, {"id": "S4", "title": "Найти раздел кланов", "task": "Вы хотите посмотреть, какие кланы есть в игре. Откройте раздел с кланами.", "hypotheses": ["H5"], "start": "hud_prototype", "success": {"screen": "clans"}, "misclick_followup": true, "questions": [{"id": "S4_Q1", "hyp": "H5", "type": "choice", "text": "Чем, по-вашему, отличаются большие карточки сверху от кнопок внизу?", "options": ["Сверху — задания, внизу — разделы игры", "Это одно и то же", "Сверху — награды, внизу — задания", "Не знаю"]}, {"id": "S4_Q2", "hyp": "H5", "type": "text", "recall": true, "optional": true, "text": "Было ли что-то непонятное, пока вы искали раздел? Опишите своими словами."}]}], "outro": {"questions": [{"id": "F_Q1", "type": "scale", "min": 1, "max": 5, "labels": ["Совсем непонятно", "Всё понятно"], "text": "Насколько в целом понятно, как устроены задания и награды?"}, {"id": "F_Q2", "type": "text", "optional": true, "text": "Что было самым непонятным?"}, {"id": "F_Q3", "type": "text", "optional": true, "text": "Что бы вы изменили?"}], "thanks": "Спасибо! Ответы отправлены. Страницу можно закрыть."}};</script>
+<script>const UT_CONFIG = {"test_id": "gamehub-demo-01", "title": "Тест: хаб заданий", "prototype": {"feature": "gamehub", "prototype": "Gamehub_proto", "version": 1}, "endpoint": "https://script.google.com/macros/s/AKfycbzdO-bBaLGWyMNOub8NUtQcFH6Esfj6h8TtMNtH-Iqel0TVFU7FUFgBjuuTcbtEhl8IGw/exec", "token": "gh-7016ca8b6133", "close_at": "", "intro": {"title": "Добро пожаловать на тест", "text": "Вы пройдёте 4 коротких задания в прототипе игры. Подсказок не будет — если что-то не получается, это нормально: мы проверяем интерфейс, а не вас.\n\nПравила:\n• проходите задания по порядку;\n• не перезагружайте страницу;\n• после каждого задания ответьте на пару вопросов.\n\nВ центре экрана игры может быть серая плашка «Завершить задание/цель» — это служебная кнопка прототипа, в игре её нет. Не обращайте на неё внимания.\n\nПрототип работает в горизонтальной ориентации.", "ask_name": true}, "scenarios": [{"id": "S1", "title": "Найти задания", "task": "Вы зашли в игру и хотите узнать, какие задания сейчас можно выполнить. Найдите их.", "hypotheses": ["H1"], "start": "hud_prototype", "success": {"screen": "game_hub"}, "misclick_followup": true, "questions": [{"id": "S1_Q1", "hyp": "H1", "type": "tap", "image": {"screen": "hud_prototype"}, "text": "Где на экране игры вы в первую очередь стали бы искать задания? Нажмите на это место."}, {"id": "S1_Q2", "hyp": "H1", "type": "scale", "min": 1, "max": 5, "labels": ["Очень сложно", "Очень легко"], "text": "Насколько легко было найти задания?"}]}, {"id": "S2", "title": "Забрать готовую награду", "task": "За одно из заданий вам уже положена награда. Заберите её.", "hypotheses": ["H2"], "start": "hud_prototype", "success": {"overlay": "reward_popup"}, "misclick_followup": true, "questions": [{"id": "S2_Q1", "hyp": "H2", "type": "choice", "text": "Что вы получили в награду?", "options": ["Кейсы (сундуки)", "Деньги", "Опыт", "Не заметил(а)"]}, {"id": "S2_Q2", "hyp": "H2", "type": "text", "recall": true, "optional": true, "text": "Как вы поняли, за какое задание положена награда?"}]}, {"id": "S3", "title": "Выполнить задание «Используй эмоцию»", "task": "Найдите задание, в котором нужно использовать эмоцию. Выполните его и заберите награду.", "hypotheses": ["H3", "H4"], "start": "hud_prototype", "success": {"overlay": "reward_popup", "state": {"t5": "false", "a5": "false"}, "via": ["hud_prototype/emote"]}, "misclick_followup": true, "questions": [{"id": "S3_Q1", "hyp": "H3", "type": "text", "recall": true, "text": "Что, по-вашему, произошло, когда вы нажали на карточку задания?"}, {"id": "S3_Q2", "hyp": "H4", "type": "choice", "text": "Было ли понятно, что карточки с заданиями можно листать вбок?", "options": ["Сразу понял(а)", "Понял(а) не сразу", "Не понял(а)", "Не листал(а)"]}, {"id": "S3_Q3", "hyp": "H3", "type": "scale", "min": 1, "max": 5, "labels": ["Очень сложно", "Очень легко"], "text": "Насколько легко было выполнить задание и забрать награду?"}]}, {"id": "S4", "title": "Найти раздел кланов", "task": "Вы хотите посмотреть, какие кланы есть в игре. Откройте раздел с кланами.", "hypotheses": ["H5"], "start": "hud_prototype", "success": {"screen": "clans"}, "misclick_followup": true, "questions": [{"id": "S4_Q1", "hyp": "H5", "type": "choice", "text": "Чем, по-вашему, отличаются большие карточки сверху от кнопок внизу?", "options": ["Сверху — задания, внизу — разделы игры", "Это одно и то же", "Сверху — награды, внизу — задания", "Не знаю"]}, {"id": "S4_Q2", "hyp": "H5", "type": "text", "recall": true, "optional": true, "text": "Было ли что-то непонятное, пока вы искали раздел? Опишите своими словами."}]}], "outro": {"questions": [{"id": "F_Q1", "type": "scale", "min": 1, "max": 5, "labels": ["Совсем непонятно", "Всё понятно"], "text": "Насколько в целом понятно, как устроены задания и награды?"}, {"id": "F_Q2", "type": "text", "optional": true, "text": "Что было самым непонятным?"}, {"id": "F_Q3", "type": "text", "optional": true, "text": "Что бы вы изменили?"}], "thanks": "Спасибо! Ответы отправлены. Страницу можно закрыть."}};</script>
 <script>
 /* ===== Оболочка юзер-теста поверх HTML-прототипа =====
    Глобальные имена от движка прототипа: SPEC, A, window.__proto (+ reset, добавлен inject_test.py).
@@ -468,14 +469,32 @@ addEventListener('resize', envChanged);
 document.addEventListener('fullscreenchange', envChanged);
 const QKEY = 'ut_queue_' + C.test_id;
 
-/* ---------- Отправка: очередь в localStorage, POST text/plain без preflight ---------- */
+/* ---------- Отправка: очередь в localStorage, POST text/plain без preflight, подтверждённая доставка ----------
+   Сообщение удаляется из очереди только после ответа приёмника {ok: true}. Отказ ({ok: false, error}) — остаётся
+   в очереди: closed — тест закрыт; bad_token / unknown_test — ошибка настройки (сообщить организатору); server — повтор.
+   Если ответ приёмника не читается (CORS), а сеть есть — отправка вслепую (no-cors), как в v1: данные хотя бы уходят. */
 function lsGet(k){ try { return JSON.parse(localStorage.getItem(k) || '[]'); } catch (e) { return []; } }
 function lsSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+const sendState = {error: null, closed: false, blind: false};
 function enqueue(kind, payload){
   const msg = Object.assign({token: C.token, test_id: C.test_id, kind, session, sent_at: new Date().toISOString()}, payload);
   const q = lsGet(QKEY); q.push(msg); lsSet(QKEY, q);
   window.__ut.outbox.push(msg);
   return flush();
+}
+async function sendOne(msg){
+  const body = JSON.stringify(msg);
+  const opts = {method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body,
+                keepalive: body.length < 60000};   // браузеры отклоняют keepalive-запросы больше 64 КБ
+  let r;
+  try { r = await fetch(C.endpoint, opts); }
+  catch (e) {
+    if (!navigator.onLine) throw e;                // нет сети — повторим позже
+    await fetch(C.endpoint, Object.assign({}, opts, {mode: 'no-cors'}));   // сеть есть, ответ не читается — вслепую
+    sendState.blind = true;
+    return {ok: true, blind: true};
+  }
+  try { return await r.json(); } catch (e) { return {ok: false, error: 'bad_response', status: r.status}; }
 }
 let flushing = null;
 async function flush(){
@@ -484,17 +503,19 @@ async function flush(){
   flushing = (async () => {
     let q = lsGet(QKEY);
     while (q.length){
-      try {
-        await fetch(C.endpoint, {method: 'POST', mode: 'no-cors', keepalive: true,
-          headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify(q[0])});
-        q.shift(); lsSet(QKEY, q);
-      } catch (e) { break; }
+      let res;
+      try { res = await sendOne(q[0]); } catch (e) { sendState.error = 'offline'; break; }
+      if (res && res.ok){ q.shift(); lsSet(QKEY, q); sendState.error = null; continue; }
+      sendState.error = (res && res.error) || 'bad_response';
+      if (sendState.error === 'closed') sendState.closed = true;
+      break;
     }
     flushing = null; return q.length === 0;
   })();
   return flushing;
 }
 addEventListener('online', flush);
+function showClosed(){ showPanel('<h2>Тест завершён</h2><p class="ut-muted">Сбор ответов закрыт.</p>'); }
 
 /* ---------- Логирование тапов ---------- */
 let cur = null;          // текущий сценарий: {sc, idx, t0, taps, visited, done, result}
@@ -523,8 +544,9 @@ document.getElementById('viewport').addEventListener('click', e => {
 }, true);
 
 window.__ut = {
-  outbox: [], session, events, answers, summaries,
-  dump(){ return {session, events, answers, summaries}; }
+  outbox: [], session, events, answers, summaries, send: sendState,
+  dump(){ return {session, events, answers, summaries}; },
+  queue: () => lsGet(QKEY).length, flush, enqueue      // для автотестов и диагностики
 };
 document.addEventListener('proto:go', e => {
   const sid = e.detail.screen;
@@ -623,7 +645,7 @@ function start(){
       if (matchMedia('(pointer:coarse)').matches && r.requestFullscreen){ await r.requestFullscreen({navigationUI: 'hide'}); try { await screen.orientation.lock(W >= H ? 'landscape' : 'portrait'); } catch (e) {} }
     } catch (e) {}
     session.env = env(); lastEnv = envStr(session.env);
-    enqueue('start', {});
+    enqueue('start', {}).then(() => { if (sendState.closed) showClosed(); });   // приёмник закрыл тест раньше close_at в HTML
     taskCard(0);
   };
 }
@@ -765,25 +787,33 @@ function outro(){
     session.finished_at = new Date().toISOString();
     showPanel('<h2>Отправляем ответы…</h2>');
     await enqueue('final', {summaries, answers: answers.filter(a => a.scenario === 'final')});
-    const left = lsGet(QKEY).length;
     if (!C.endpoint){
       showPanel('<h2>Тест пройден</h2><p class="ut-muted">Демо-режим: адрес для отправки не задан, данные не отправлены.</p><button class="ut-main" id="ut-dl">Скачать результаты (JSON)</button>');
       document.getElementById('ut-dl').onclick = () => {
         const b = new Blob([JSON.stringify(window.__ut.dump(), null, 2)], {type: 'application/json'});
         const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = session.session_id + '.json'; a.click();
       };
-    } else if (left){
-      showPanel('<h2>Не удалось отправить</h2><p>Проверьте интернет и нажмите «Повторить». Ответы сохранены на этом устройстве.</p><button class="ut-main" id="ut-retry">Повторить</button>');
-      document.getElementById('ut-retry').onclick = async () => { await flush(); if (!lsGet(QKEY).length) showPanel('<h2>' + esc(C.outro.thanks) + '</h2>'); };
-    } else showPanel('<h2>' + esc((C.outro && C.outro.thanks) || 'Спасибо!') + '</h2>');
+    } else finishPanel();
   });
 }
 
+/* Итог отправки: всё доставлено — спасибо; тест закрыт; ошибка настройки; нет сети / сбой — «Повторить». */
+function finishPanel(){
+  if (!lsGet(QKEY).length) return showPanel('<h2>' + esc((C.outro && C.outro.thanks) || 'Спасибо!') + '</h2>');
+  if (sendState.closed) return showPanel('<h2>Тест завершён</h2><p class="ut-muted">Сбор ответов закрыт, ответы не записаны.</p>');
+  const setup = sendState.error === 'bad_token' || sendState.error === 'unknown_test';
+  showPanel('<h2>Не удалось отправить</h2><p>' + (setup
+      ? 'Сообщите организатору теста: ответы не принимаются (код: ' + esc(sendState.error) + ').'
+      : 'Проверьте интернет и нажмите «Повторить».') +
+    ' Ответы сохранены на этом устройстве.</p><button class="ut-main" id="ut-retry">Повторить</button>');
+  document.getElementById('ut-retry').onclick = async () => { await flush(); finishPanel(); };
+}
+
 /* Закрытый тест */
-if (C.close_at && new Date() > new Date(C.close_at)){
-  showPanel('<h2>Тест завершён</h2><p class="ut-muted">Сбор ответов закрыт.</p>');
-} else start();
+if (C.close_at && new Date() > new Date(C.close_at)) showClosed();
+else start();
 })();
 </script>
+<!-- ut-shell:end -->
 </body>
 </html>
