@@ -461,6 +461,12 @@ html.ut-tb-task #ut-pill,html.ut-tb-done #ut-done{display:none!important}
 .ut-zx{position:absolute;top:max(8px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));width:40px;height:40px;border-radius:50%!important;background:rgba(20,20,24,.8)!important;color:#fff!important;font-size:18px!important;border:1px solid rgba(255,255,255,.3)!important}
 .ut-zhint{position:absolute;left:50%;bottom:max(8px,env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(20,20,24,.7);color:#fff;font-size:12px;padding:5px 12px;border-radius:999px;pointer-events:none;white-space:nowrap}
 #ut-zoom.big .ut-zhint{display:none}
+/* Неактивная кнопка (нет ответа на обязательный вопрос): серая, но нажимается — показывает подсказку */
+#ut .ut-main.ut-off{background:#4a4d55;color:#9aa0ab}
+#ut-hint{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);z-index:300;max-width:calc(100vw - 48px);
+  background:rgba(20,21,25,.96);color:var(--ut-fg);border:1px solid var(--ut-line);border-radius:12px;padding:12px 18px;
+  text-align:center;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+#ut-hint.on{opacity:1;transform:translate(-50%,-50%)}
 .shake{animation:ut-shake .3s}
 @keyframes ut-shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 @media (prefers-reduced-motion:reduce){.shake,#ut-done.on,#ut #ut-toq.on{animation:none}#ut-toast{transition:none}}
@@ -696,8 +702,33 @@ function checkSuccess(){
 function autoReach(result){
   const c = cur; markReached(result);
   c.wait = true; pill.classList.remove('on'); sheet.classList.remove('on'); block.classList.add('on'); tbRender();
-  toast.textContent = 'Задание завершено'; toast.classList.add('on');
-  setTimeout(() => { toast.classList.remove('on'); if (cur === c && c.wait) toQ.classList.add('on'); }, 2000);
+  afterQuiet(c, () => {
+    toast.textContent = 'Задание завершено'; toast.classList.add('on');
+    setTimeout(() => { toast.classList.remove('on'); if (cur === c && c.wait) toQ.classList.add('on'); }, 2000);
+  });
+}
+/* Плашка оболочки — не сразу (оператор 11.11.2026): прототип часто сам отвечает на действие — уведомление игры,
+   анимация оверлея; плашка поверх них сбивает. Ждём, пока в прототипе всё закончится (нет идущих анимаций
+   и видимых временных уведомлений), и ещё QUIET_MS. Постоянные уведомления (holdMs: null) и бесконечные анимации
+   не ждём; на всякий случай — не дольше QUIET_MAX от выполнения. */
+const QUIET_MS = 1500, QUIET_MAX = 8000;
+function protoBusy(){
+  const anim = document.getAnimations ? document.getAnimations().some(a => {
+    const t = a.effect && a.effect.target;
+    return a.playState === 'running' && t && stageEl.contains(t) && a.effect.getComputedTiming().endTime !== Infinity;
+  }) : false;
+  if (anim) return true;
+  const E = (SPEC.screens[P.screen] || {}).effects || {};
+  return typeof P.effectVisible === 'function' && Object.keys(E).some(id => E[id].holdMs !== null && !E[id].persist && P.effectVisible(id));
+}
+function afterQuiet(c, fn){
+  const t0 = now(); let last = t0;
+  const tick = () => {
+    if (cur !== c || !c.wait) return;
+    const t = now(); if (protoBusy()) last = t;
+    if (t - last >= QUIET_MS || t - t0 >= QUIET_MAX) fn(); else setTimeout(tick, 100);
+  };
+  setTimeout(tick, 100);
 }
 /* finish: done — задание выполнено: метрики фиксируются на этот момент, прототип остаётся, появляется «Готово». */
 function markReached(result){
@@ -772,6 +803,13 @@ function tbClick(role){
   }
 }
 zoom.addEventListener('click', e => { if (e.target === zoom || e.target.classList.contains('ut-zwrap')) closeZoom(); });
+/* Подсказка по центру экрана (неактивная кнопка и т. п.): исчезает сама через ~2 с. */
+const hintEl = document.createElement('div'); hintEl.id = 'ut-hint'; hintEl.setAttribute('role', 'status'); root.appendChild(hintEl);
+let hintTimer = 0;
+function hint(text){
+  hintEl.textContent = text; hintEl.classList.remove('on'); void hintEl.offsetWidth; hintEl.classList.add('on');
+  clearTimeout(hintTimer); hintTimer = setTimeout(() => hintEl.classList.remove('on'), 2200);
+}
 function closeZoom(){ zoom.classList.remove('on', 'big'); zoom.innerHTML = ''; }
 
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
@@ -882,9 +920,11 @@ function start(){
   showPanel('<h1>' + esc(it.title || 'Тест') + '</h1>' + para(it.text || '') +
     (it.ask_name ? '<label class="ut-lbl">Ваше имя или ник в Slack<input id="ut-name" autocomplete="off"></label>' : '') +
     '<button class="ut-main" id="ut-go">Начать</button>');
-  document.getElementById('ut-go').onclick = async () => {
+  const goBtn = document.getElementById('ut-go'), nm = document.getElementById('ut-name');
+  if (nm){ const upd = () => goBtn.classList.toggle('ut-off', !nm.value.trim()); nm.addEventListener('input', () => { nm.classList.remove('err'); upd(); }); upd(); }
+  goBtn.onclick = async () => {
     const n = document.getElementById('ut-name');
-    if (n){ if (!n.value.trim()){ n.focus(); n.classList.add('err'); return; } session.respondent = n.value.trim(); }
+    if (n){ if (!n.value.trim()){ n.classList.add('err'); hint('Сначала введите имя или ник'); return; } session.respondent = n.value.trim(); }
     try {
       const r = document.documentElement;
       if (matchMedia('(pointer:coarse)').matches && r.requestFullscreen){ await r.requestFullscreen({navigationUI: 'hide'}); try { await screen.orientation.lock(W >= H ? 'landscape' : 'portrait'); } catch (e) {} }
@@ -999,6 +1039,13 @@ function askOne(q, c, i, n, ok){
   const body = document.getElementById('ut-body');
   const t0 = performance.now();
   let value = null, extra = {};
+  /* «Дальше» неактивна (серая), пока нет ответа на обязательный вопрос; тап по ней — подсказка, что сделать
+     (оператор 11.11.2026: раньше кнопка молча не срабатывала). */
+  const nextBtn = document.getElementById('ut-next');
+  const setVal = v => { value = v; nextBtn.classList.toggle('ut-off', value == null && !q.optional); };
+  setVal(null);
+  const NEED = {tap: 'Сначала нажмите на картинку — отметьте место', choice: 'Сначала выберите вариант ответа',
+                scale: 'Сначала выберите оценку', text: 'Сначала напишите ответ'};
   // картинка (и метка) — у вопроса любого типа, тап открывает её на весь экран; у tap своя картинка-мишень ниже
   if (q.image && q.type !== 'tap'){
     body.appendChild(zoomableFrame(q.image, q.mark ? [{x: q.mark.x, y: q.mark.y, cls: 'ref'}] : [], () => { extra.zoom_used = true; }));
@@ -1006,12 +1053,12 @@ function askOne(q, c, i, n, ok){
   }
   if (q.type === 'text'){
     const ta = document.createElement('textarea'); ta.rows = 3; ta.placeholder = 'Ваш ответ';
-    ta.oninput = () => { value = ta.value.trim() || null; }; body.appendChild(ta);
+    ta.oninput = () => setVal(ta.value.trim() || null); body.appendChild(ta);
   } else if (q.type === 'choice' || q.type === 'scale'){
     const opts = q.type === 'scale' ? Array.from({length: q.max - q.min + 1}, (_, k) => String(q.min + k)) : q.options;
     const box = document.createElement('div'); box.className = 'ut-opts' + (q.type === 'scale' ? ' scale' : '');
     opts.forEach(o => { const b = document.createElement('button'); b.type = 'button'; b.textContent = o;
-      b.onclick = () => { box.querySelectorAll('button').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); value = o; }; box.appendChild(b); });
+      b.onclick = () => { box.querySelectorAll('button').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); setVal(o); }; box.appendChild(b); });
     body.appendChild(box);
     if (q.type === 'scale' && q.labels) body.insertAdjacentHTML('beforeend', '<div class="ut-scale-l"><span>' + esc(q.labels[0]) + '</span><span>' + esc(q.labels[1]) + '</span></div>');
   } else if (q.type === 'tap'){
@@ -1021,7 +1068,7 @@ function askOne(q, c, i, n, ok){
     f.addEventListener('click', e => {
       const r = f.getBoundingClientRect();
       const x = Math.round((e.clientX - r.left) / r.width * W), y = Math.round((e.clientY - r.top) / r.height * H);
-      if (m) m.remove(); m = addMarker(f, x, y); value = x + ',' + y; extra = {x, y};
+      if (m) m.remove(); m = addMarker(f, x, y); extra = {x, y}; setVal(x + ',' + y);
     });
   }
   const rb = document.getElementById('ut-recall');
@@ -1038,8 +1085,8 @@ function askOne(q, c, i, n, ok){
     }, extra));
     ok();
   };
-  document.getElementById('ut-next').onclick = () => {
-    if (value == null && !q.optional){ body.classList.remove('shake'); void body.offsetWidth; body.classList.add('shake'); return; }
+  nextBtn.onclick = () => {
+    if (value == null && !q.optional){ hint(NEED[q.type] || 'Сначала ответьте на вопрос'); return; }
     save(value == null);
   };
   const sk = document.getElementById('ut-skip'); if (sk) sk.onclick = () => save(true);
