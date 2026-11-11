@@ -390,9 +390,9 @@ html.ut-panel #ut-panel{display:block}
 #ut-sb::before{content:"";position:absolute;left:0;right:0;top:6px;bottom:6px;border-radius:3px;background:rgba(255,255,255,.10)}
 #ut-sb i{position:absolute;left:0;top:0;width:100%;border-radius:3px;background:rgba(255,255,255,.55)}
 #ut #ut-more{position:fixed;left:50%;width:32px;height:32px;min-height:0;margin-left:-16px;padding:0;border-radius:50%;z-index:201;
-  background:rgba(31,33,39,.88);border:1px solid var(--ut-line);color:var(--ut-fg);box-shadow:0 2px 8px rgba(0,0,0,.45);
+  background:#22c55e;border:0;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.35);
   display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
-#ut #ut-more.on{display:flex;opacity:.9}
+#ut #ut-more.on{display:flex;opacity:1}
 #ut-more svg{width:16px;height:16px;display:block}
 .ut-card{max-width:720px;margin:0 auto}
 #ut h1{font-size:22px;margin:4px 0 12px}
@@ -445,7 +445,13 @@ html.ut-tb-task #ut-pill,html.ut-tb-done #ut-done{display:none!important}
   background:var(--ut-card);border:1px solid var(--ut-line);border-radius:14px;padding:14px 16px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
 #ut-sheet.on{display:block}
 .ut-task{font-size:16px;font-weight:600}
-#ut-toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;z-index:170;background:#2bb673;color:#fff;font-weight:600;padding:12px 22px;border-radius:999px;transition:.25s;pointer-events:none}
+#ut-toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;z-index:170;background:#2bb673;color:#fff;font-weight:600;padding:12px 22px;border-radius:0;transition:.25s;pointer-events:none}
+/* finish: auto — пауза после выполнения: прототип заблокирован, на месте плашки — кнопка «К вопросам» */
+#ut-block{position:fixed;inset:0;z-index:145;display:none}
+#ut-block.on{display:block}
+#ut #ut-toq{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:170;display:none;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+#ut #ut-toq.on{display:block;animation:ut-toq-in .25s ease-out}
+@keyframes ut-toq-in{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translateX(-50%)}}
 #ut-toast.on{opacity:1;transform:translate(-50%,0)}
 #ut-zoom{position:fixed;inset:0;z-index:250;background:rgba(0,0,0,.92);display:none}
 #ut-zoom.on{display:block}
@@ -457,7 +463,7 @@ html.ut-tb-task #ut-pill,html.ut-tb-done #ut-done{display:none!important}
 #ut-zoom.big .ut-zhint{display:none}
 .shake{animation:ut-shake .3s}
 @keyframes ut-shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
-@media (prefers-reduced-motion:reduce){.shake,#ut-done.on{animation:none}#ut-toast{transition:none}}
+@media (prefers-reduced-motion:reduce){.shake,#ut-done.on,#ut #ut-toq.on{animation:none}#ut-toast{transition:none}}
 /* Изолированный режим: выключенный элемент без эффекта нажатия, заблокированная область не листается */
 html.ut .hit.ut-off{cursor:default}
 html.ut .hit.ut-off.press:active{background:none}
@@ -681,15 +687,25 @@ function checkSuccess(){
   trackTarget(cur);
   if (!successMet(cur.sc.success)) return;
   const result = viaMissing(cur).length || cheatUsed(cur) ? 'wrong_path' : 'success';
-  if (cur.finish === 'done') reachScenario(result); else finishScenario(result);
+  if (cur.finish === 'done') reachScenario(result); else autoReach(result);
+}
+/* finish: auto — задание засчитано: метрики фиксируются, прототип блокируется (экран результата остаётся на месте),
+   плашка «Задание завершено» 2 с, затем на её месте кнопка «К вопросам»; вопросы — только по нажатию
+   (оператор 11.11.2026: раньше вопросы открывались сами через ~1 с, респондент не успевал понять, что задание выполнено).
+   Текст плашки нейтральный: она же показывается при wrong_path. scenario_end и done_ms — по нажатию кнопки. */
+function autoReach(result){
+  const c = cur; markReached(result);
+  c.wait = true; pill.classList.remove('on'); sheet.classList.remove('on'); block.classList.add('on'); tbRender();
+  toast.textContent = 'Задание завершено'; toast.classList.add('on');
+  setTimeout(() => { toast.classList.remove('on'); if (cur === c && c.wait) toQ.classList.add('on'); }, 2000);
 }
 /* finish: done — задание выполнено: метрики фиксируются на этот момент, прототип остаётся, появляется «Готово». */
-function reachScenario(result){
+function markReached(result){
   const c = cur;
   c.reached = {result, t: now() - c.t0, n: c.taps.length, via_missing: viaMissing(c).join(', ')};
   events.push({type: 'reached', scenario: c.sc.id, t: c.reached.t, screen: P.screen, overlay: P.overlay, result});
-  doneBtn.classList.add('on'); tbRender();
 }
+function reachScenario(result){ markReached(result); doneBtn.classList.add('on'); tbRender(); }
 
 /* ---------- UI ---------- */
 const root = document.createElement('div'); root.id = 'ut'; document.body.appendChild(root);
@@ -700,6 +716,9 @@ const doneBtn = document.createElement('button'); doneBtn.id = 'ut-done'; doneBt
 const sheet = document.createElement('div'); sheet.id = 'ut-sheet'; root.appendChild(sheet);
 const toast = document.createElement('div'); toast.id = 'ut-toast'; root.appendChild(toast);
 const zoom = document.createElement('div'); zoom.id = 'ut-zoom'; root.appendChild(zoom);
+const block = document.createElement('div'); block.id = 'ut-block'; root.appendChild(block);   // прототип заблокирован (finish: auto, пауза до «К вопросам»)
+const toQ = document.createElement('button'); toQ.id = 'ut-toq'; toQ.type = 'button'; toQ.className = 'ut-main'; toQ.textContent = 'К вопросам'; root.appendChild(toQ);
+toQ.onclick = () => { if (cur && cur.wait && !cur.done){ cur.wait = false; toQ.classList.remove('on'); block.classList.remove('on'); finishScenario(cur.reached.result); } };
 root.style.setProperty('--ut-ar', String(W / H));
 
 /* ---------- Кнопки теста из макета («[TEST] …» в Figma → SPEC.testButtons) ----------
@@ -730,7 +749,7 @@ function tbPick(role){
 }
 function tbRender(){
   if (!TB.length) return;
-  const live = !!cur && !cur.done && !html.classList.contains('ut-panel');
+  const live = !!cur && !cur.done && !cur.wait && !html.classList.contains('ut-panel');
   const want = {task: live, skip: live && !cur.reached, done: live && !!cur.reached};
   const pick = {}; TB_ROLES.forEach(r => { pick[r] = want[r] ? tbPick(r) : null; });
   TB.forEach(b => {
@@ -911,7 +930,7 @@ pill.onclick = () => {
   if (r) document.getElementById('ut-sheet-done').onclick = () => { sheet.classList.remove('on'); finishScenario(r.result); };
   else document.getElementById('ut-give').onclick = () => { sheet.classList.remove('on'); finishScenario('gave_up'); };
 };
-doneBtn.onclick = () => { if (cur && !cur.done && cur.reached){ sheet.classList.remove('on'); finishScenario(cur.reached.result); } };
+doneBtn.onclick = () => { if (cur && !cur.done && !cur.wait && cur.reached){ sheet.classList.remove('on'); finishScenario(cur.reached.result); } };
 
 /* Промах: пустое место, пустое место в оверлее, выключенный маской элемент. */
 const MISS = {dead: true, overlay_dead: true, masked: true};
@@ -943,11 +962,7 @@ function finishScenario(result){
   };
   summaries.push(c.summary);
   pill.classList.remove('on'); doneBtn.classList.remove('on'); tbRender();
-  if (r) askScenario(c);   // респондент сам нажал «Готово» — тост не нужен
-  else if (result === 'success' || result === 'wrong_path'){
-    toast.textContent = 'Задание завершено'; toast.classList.add('on');
-    setTimeout(() => { toast.classList.remove('on'); askScenario(c); }, 1100);
-  } else askScenario(c);
+  askScenario(c);   // выполнено — респондент уже нажал «Готово» / «К вопросам»; не получилось — сразу к вопросам
 }
 
 /* Вопросы сценария: сначала уточнение по промаху (пока свежо), потом вопросы из конфига. */
