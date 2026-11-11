@@ -721,10 +721,11 @@ function protoBusy(){
   const E = (SPEC.screens[P.screen] || {}).effects || {};
   return typeof P.effectVisible === 'function' && Object.keys(E).some(id => E[id].holdMs !== null && !E[id].persist && P.effectVisible(id));
 }
-function afterQuiet(c, fn){
+function afterQuiet(c, fn, alive){
+  alive = alive || (() => c.wait);
   const t0 = now(); let last = t0;
   const tick = () => {
-    if (cur !== c || !c.wait) return;
+    if (cur !== c || !alive()) return;
     const t = now(); if (protoBusy()) last = t;
     if (t - last >= QUIET_MS || t - t0 >= QUIET_MAX) fn(); else setTimeout(tick, 100);
   };
@@ -736,7 +737,12 @@ function markReached(result){
   c.reached = {result, t: now() - c.t0, n: c.taps.length, via_missing: viaMissing(c).join(', ')};
   events.push({type: 'reached', scenario: c.sc.id, t: c.reached.t, screen: P.screen, overlay: P.overlay, result});
 }
-function reachScenario(result){ markReached(result); doneBtn.classList.add('on'); tbRender(); }
+/* finish: done — «Готово» тоже не сразу (оператор 11.11.2026): по тому же правилу, что плашка у auto, — когда в прототипе
+   всё закончится, и ещё QUIET_MS. Прототип при этом не блокируется: респондент смотрит результат. */
+function reachScenario(result){
+  const c = cur; markReached(result);
+  afterQuiet(c, () => { c.doneReady = true; doneBtn.classList.add('on'); tbRender(); }, () => !c.done);
+}
 
 /* ---------- UI ---------- */
 const root = document.createElement('div'); root.id = 'ut'; document.body.appendChild(root);
@@ -781,7 +787,7 @@ function tbPick(role){
 function tbRender(){
   if (!TB.length) return;
   const live = !!cur && !cur.done && !cur.wait && !html.classList.contains('ut-panel');
-  const want = {task: live, skip: live && !cur.reached, done: live && !!cur.reached};
+  const want = {task: live, skip: live && !cur.reached, done: live && !!cur.reached && !!cur.doneReady};
   const pick = {}; TB_ROLES.forEach(r => { pick[r] = want[r] ? tbPick(r) : null; });
   TB.forEach(b => {
     const on = pick[b.role] === b;
@@ -960,17 +966,17 @@ function runScenario(idx){
 
 pill.onclick = () => {
   if (!cur || cur.done) return;
-  const r = cur.reached;   // задание уже выполнено (finish: done) — вместо «Не получается» кнопка «Готово»
+  const r = cur.reached && cur.doneReady ? cur.reached : null;   // задание выполнено (finish: done) и «Готово» уже показана — вместо «Не получается» кнопка «Готово»
   sheet.innerHTML = '<div class="ut-step">Задание ' + (cur.idx + 1) + ' из ' + C.scenarios.length + '</div><p class="ut-task">' + esc(cur.sc.task) + '</p>' +
     '<div class="ut-row"><button class="ut-main" id="ut-cont">Продолжить</button>' +
-    (r ? '<button class="ut-alt" id="ut-sheet-done">Готово</button>' : '<button class="ut-alt" id="ut-give">Не получается — дальше</button>') + '</div>';
+    (r ? '<button class="ut-alt" id="ut-sheet-done">Готово</button>' : cur.reached ? '' : '<button class="ut-alt" id="ut-give">Не получается — дальше</button>') + '</div>';
   sheet.classList.add('on');
   events.push({type: 'task_reopen', scenario: cur.sc.id, t: now() - cur.t0});
   document.getElementById('ut-cont').onclick = () => sheet.classList.remove('on');
   if (r) document.getElementById('ut-sheet-done').onclick = () => { sheet.classList.remove('on'); finishScenario(r.result); };
-  else document.getElementById('ut-give').onclick = () => { sheet.classList.remove('on'); finishScenario('gave_up'); };
+  else if (!cur.reached) document.getElementById('ut-give').onclick = () => { sheet.classList.remove('on'); finishScenario('gave_up'); };
 };
-doneBtn.onclick = () => { if (cur && !cur.done && !cur.wait && cur.reached){ sheet.classList.remove('on'); finishScenario(cur.reached.result); } };
+doneBtn.onclick = () => { if (cur && !cur.done && !cur.wait && cur.reached && cur.doneReady){ sheet.classList.remove('on'); finishScenario(cur.reached.result); } };
 
 /* Промах: пустое место, пустое место в оверлее, выключенный маской элемент. */
 const MISS = {dead: true, overlay_dead: true, masked: true};
