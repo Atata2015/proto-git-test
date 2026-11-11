@@ -382,6 +382,18 @@ html.ut-panel #rotate{display:none!important}
 #ut-panel{position:fixed;inset:0;z-index:200;background:var(--ut-bg);overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;
   padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
 html.ut-panel #ut-panel{display:block}
+/* Своя полоска прокрутки и стрелка «ниже есть ещё» (системная на телефоне видна только во время прокрутки) */
+#ut-panel{scrollbar-width:none}
+#ut-panel::-webkit-scrollbar{display:none}
+#ut-sb{position:fixed;right:max(3px,env(safe-area-inset-right));width:5px;z-index:201;pointer-events:none;display:none}
+#ut-sb.on{display:block}
+#ut-sb::before{content:"";position:absolute;left:0;right:0;top:6px;bottom:6px;border-radius:3px;background:rgba(255,255,255,.10)}
+#ut-sb i{position:absolute;left:0;top:0;width:100%;border-radius:3px;background:rgba(255,255,255,.55)}
+#ut #ut-more{position:fixed;left:50%;width:32px;height:32px;min-height:0;margin-left:-16px;padding:0;border-radius:50%;z-index:201;
+  background:rgba(31,33,39,.88);border:1px solid var(--ut-line);color:var(--ut-fg);box-shadow:0 2px 8px rgba(0,0,0,.45);
+  display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+#ut #ut-more.on{display:flex;opacity:.9}
+#ut-more svg{width:16px;height:16px;display:block}
 .ut-card{max-width:720px;margin:0 auto}
 #ut h1{font-size:22px;margin:4px 0 12px}
 #ut h2{font-size:18px;line-height:1.35;margin:4px 0 14px;font-weight:600}
@@ -748,9 +760,40 @@ const para = s => esc(s).split('\n').map(l => l.trim() ? '<p>' + l + '</p>' : ''
 function showPanel(htmlStr){
   panel.innerHTML = '<div class="ut-card">' + htmlStr + '</div>';
   panel.scrollTop = 0; html.classList.add('ut-panel'); pill.classList.remove('on'); doneBtn.classList.remove('on'); sheet.classList.remove('on');
+  moreSeen = false; if (sbRO) { sbRO.disconnect(); sbRO.observe(panel.firstChild); }
+  panel.querySelectorAll('img').forEach(i => i.addEventListener('load', sbUpdate));
+  sbUpdate(); requestAnimationFrame(sbUpdate);
   tbRender();
 }
-function hidePanel(){ html.classList.remove('ut-panel'); panel.innerHTML = ''; tbRender(); }
+function hidePanel(){ html.classList.remove('ut-panel'); panel.innerHTML = ''; sbUpdate(); tbRender(); }
+
+/* Подсказка прокрутки (оператор 11.11.2026): в горизонтальной ориентации вопрос и картинка занимают весь экран,
+   поле ответа ниже — респондент может не понять, что нужно прокрутить. Системная полоска на телефоне видна только
+   во время прокрутки, поэтому своя: дорожка с ползунком у правого края, пока содержимое не помещается; и маленький
+   кружок со стрелкой внизу по центру — пропадает после первой прокрутки (тап по нему прокручивает вниз). */
+const sb = document.createElement('div'); sb.id = 'ut-sb'; sb.appendChild(document.createElement('i')); root.appendChild(sb);
+const more = document.createElement('button'); more.id = 'ut-more'; more.type = 'button'; more.setAttribute('aria-label', 'Ниже есть ещё');
+more.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6l4.5 4.5L12.5 6"/></svg>';
+root.appendChild(more);
+let moreSeen = false;
+const sbRO = window.ResizeObserver ? new ResizeObserver(() => sbUpdate()) : null;
+function sbUpdate(){
+  const ch = panel.clientHeight, sh = panel.scrollHeight;
+  const over = html.classList.contains('ut-panel') && sh > ch + 4;
+  sb.classList.toggle('on', over);
+  if (panel.scrollTop > 8) moreSeen = true;
+  more.classList.toggle('on', over && !moreSeen);
+  if (!over) return;
+  const r = panel.getBoundingClientRect(), pad = 6, track = r.height - 2 * pad;
+  const th = Math.max(28, Math.round(track * ch / sh));
+  const top = pad + Math.round((track - th) * Math.min(1, panel.scrollTop / (sh - ch)));
+  sb.style.top = r.top + 'px'; sb.style.height = r.height + 'px';
+  sb.firstChild.style.height = th + 'px'; sb.firstChild.style.transform = 'translateY(' + top + 'px)';
+  more.style.bottom = Math.max(10, Math.round(innerHeight - r.bottom) + 10) + 'px';
+}
+panel.addEventListener('scroll', sbUpdate, {passive: true});
+window.addEventListener('resize', sbUpdate);
+more.addEventListener('click', () => panel.scrollBy({top: Math.round(panel.clientHeight * 0.7), behavior: 'smooth'}));
 
 /* Экранная клавиатура. В полноэкранном режиме Android она ложится поверх страницы, высота окна не меняется —
    поле ввода внизу панели оказывается под клавиатурой, и прокрутить его выше нельзя (пилот 10.11.2026).
@@ -763,6 +806,7 @@ function fitKeyboard(){
   html.classList.toggle('ut-kb', kb > 40);
   const a = document.activeElement;
   if (kb > 40 && a && panel.contains(a) && /^(TEXTAREA|INPUT)$/.test(a.tagName)) a.scrollIntoView({block: 'center'});
+  sbUpdate();
 }
 if (vv){ vv.addEventListener('resize', fitKeyboard); vv.addEventListener('scroll', fitKeyboard); }
 panel.addEventListener('focusin', e => { if (/^(TEXTAREA|INPUT)$/.test(e.target.tagName)) setTimeout(fitKeyboard, 300); });
