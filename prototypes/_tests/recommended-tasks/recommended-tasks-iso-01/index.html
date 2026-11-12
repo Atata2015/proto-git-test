@@ -545,7 +545,7 @@ function lsGet(k){ try { return JSON.parse(localStorage.getItem(k) || '[]'); } c
 function lsSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 const sendState = {error: null, closed: false, blind: false};
 function enqueue(kind, payload){
-  const msg = Object.assign({token: C.token, test_id: C.test_id, kind, session, sent_at: new Date().toISOString()}, payload);
+  const msg = Object.assign({id: rid(), token: C.token, test_id: C.test_id, kind, session, sent_at: new Date().toISOString()}, payload);
   const q = lsGet(QKEY); q.push(msg); lsSet(QKEY, q);
   window.__ut.outbox.push(msg);
   return flush();
@@ -564,25 +564,30 @@ async function sendOne(msg){
   }
   try { return await r.json(); } catch (e) { return {ok: false, error: 'bad_response', status: r.status}; }
 }
+/* Очередь перечитывается на каждом шаге, отправленное сообщение удаляется по id (пилот 12.11.2026): раньше flush держал
+   копию очереди и после отправки записывал её обратно — сообщение, добавленное во время отправки (финал, пока уходит
+   последний сценарий), затиралось, а enqueue получал обещание уже идущей отправки: «Спасибо!», но финал не отправлен. */
+const sameMsg = (a, b) => a.id ? a.id === b.id : a.kind === b.kind && a.sent_at === b.sent_at && (a.scenario || '') === (b.scenario || '');
 let flushing = null;
 async function flush(){
   if (!C.endpoint) return false;
   if (flushing) return flushing;
   flushing = (async () => {
-    let q = lsGet(QKEY);
-    while (q.length){
-      let res;
-      try { res = await sendOne(q[0]); } catch (e) { sendState.error = 'offline'; break; }
-      if (res && res.ok){ q.shift(); lsSet(QKEY, q); sendState.error = null; continue; }
+    let q;
+    while ((q = lsGet(QKEY)).length){
+      const m = q[0]; let res;
+      try { res = await sendOne(m); } catch (e) { sendState.error = 'offline'; break; }
+      if (res && res.ok){ lsSet(QKEY, lsGet(QKEY).filter(x => !sameMsg(x, m))); sendState.error = null; continue; }
       sendState.error = (res && res.error) || 'bad_response';
       if (sendState.error === 'closed') sendState.closed = true;
       break;
     }
-    flushing = null; return q.length === 0;
+    flushing = null; return lsGet(QKEY).length === 0;
   })();
   return flushing;
 }
 addEventListener('online', flush);
+if (lsGet(QKEY).length) flush();   // осталось с прошлого раза (вкладку закрыли до отправки) — отправить при открытии
 function showClosed(){ showPanel('<h2>Тест завершён</h2><p class="ut-muted">Сбор ответов закрыт.</p>'); }
 
 /* ---------- Изолированный режим: маска ----------
