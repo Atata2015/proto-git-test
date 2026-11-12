@@ -11,7 +11,7 @@
   Публикатор (UserTests-Pipeline, skills/user-test/scripts/publish_test.py) заменяет единственную метку данных
   внутри <script id="tests-data"> на JSON с данными страницы, заменив в JSON каждое "</" на "<\/". Вся вёрстка — здесь.
   Вид повторяет общий шаблон каталога (_templates/index-template.html); CSS вкладок совпадает с вставкой ut-tabs в нём.
-  Шаблон-версия: 2
+  Шаблон-версия: 3
 -->
 <style>
 :root{--bg:#f6f6f4;--card:#fff;--ink:#1d1d1b;--muted:#6b6b66;--line:#e3e2dd;--accent:#3355ff;--chip:#eef0ff;
@@ -30,6 +30,7 @@ h1{font-size:28px;line-height:1.2;margin:0 0 6px}.lead{color:var(--muted);margin
 .desc{margin:6px 0 0}.proto{margin:6px 0 0;font-size:14px;color:var(--muted)}
 .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .btn{display:inline-block;padding:8px 14px;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;font-size:14px}
+.btn.btn2{background:transparent;color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 @media (prefers-color-scheme:dark){.btn{color:#111}}
 .chips{margin-top:8px}
 .chip{display:inline-block;border-radius:8px;padding:2px 10px;margin:0 6px 6px 0;font-size:13px;background:var(--chip)}
@@ -42,7 +43,7 @@ h1{font-size:28px;line-height:1.2;margin:0 0 6px}.lead{color:var(--muted);margin
 </head>
 <body>
 <main id="app"><noscript><p class="noscript">Для просмотра страницы включите JavaScript.</p></noscript></main>
-<script id="tests-data" type="application/json">{"schema":2,"catalog_title":"Прототипы (тест)","link_style":"dir","generated_at":"2026-11-12T13:58:30.910+00:00","page":"tests","features":[{"slug":"gamehub","title":"Gamehub","created_at":"2026-11-10T09:26:46.080+00:00","updated_at":"2026-11-10T09:26:46.080+00:00","tests":[{"title":"Тест: хаб заданий","status":"pilot","mode":"shared","demo":false,"scenarios":4,"prototype":{"feature":"gamehub","prototype":"Gamehub_proto","version":1},"created_at":"2026-11-10T08:46:15.715+00:00","updated_at":"2026-11-10T10:15:00.896+00:00","version":3,"slug":"gamehub-demo-01"}]},{"slug":"recommended-tasks","title":"Рекомендованные задания","description":"Рекомендованные задания (OneState): планшет с заданиями, отслеживание на HUD и прогресс по задачам и целям.","created_at":"2026-11-10T12:37:19.909+00:00","updated_at":"2026-11-10T12:37:19.909+00:00","tests":[{"title":"Тест: рекомендованные задания","description":"Прогон пайплайна на фиче «Рекомендованные задания»: находимость планшета, отслеживание задания на HUD, понимание счётчиков. Респондент — оператор.","status":"pilot","mode":"shared","demo":false,"scenarios":3,"prototype":{"feature":"recommended-tasks","prototype":"prototype-2","version":1,"in_catalog":true,"title":"Prototype_2","feature_title":"Рекомендованные задания"},"created_at":"2026-11-10T12:37:19.909+00:00","updated_at":"2026-11-12T13:58:30.223+00:00","version":4,"slug":"recommended-tasks-dry-01"},{"title":"Тест: рекомендованные задания — изолированный режим (проверка)","description":"Изолированный режим (маска) и кнопки теста из макета ([TEST]: «Задание», «Готово» слева внизу); в прототипе помечен чит [CHEAT]. Демо-режим, ответы не отправляются. Проверка пайплайна, респондент — оператор.","status":"draft","mode":"isolated","demo":true,"scenarios":3,"prototype":{"feature":"recommended-tasks","prototype":"prototype-2-v2","version":1,"in_catalog":true,"title":"Prototype_2 v2 (читы и кнопки теста)","feature_title":"Рекомендованные задания"},"created_at":"2026-11-11T13:54:32.381+00:00","updated_at":"2026-11-12T12:46:59.393+00:00","version":9,"slug":"recommended-tasks-iso-01"}]}]}</script>
+<script id="tests-data" type="application/json">{"schema":2,"catalog_title":"Прототипы (тест)","link_style":"dir","generated_at":"2026-11-12T15:25:59.973+00:00","page":"tests","features":[{"slug":"gamehub","title":"Gamehub","created_at":"2026-11-10T09:26:46.080+00:00","updated_at":"2026-11-10T09:26:46.080+00:00","tests":[{"title":"Тест: хаб заданий","status":"pilot","mode":"shared","demo":false,"scenarios":4,"prototype":{"feature":"gamehub","prototype":"Gamehub_proto","version":1},"created_at":"2026-11-10T08:46:15.715+00:00","updated_at":"2026-11-10T10:15:00.896+00:00","version":3,"slug":"gamehub-demo-01"}]},{"slug":"recommended-tasks","title":"Рекомендованные задания","description":"Рекомендованные задания (OneState): планшет с заданиями, отслеживание на HUD и прогресс по задачам и целям.","created_at":"2026-11-10T12:37:19.909+00:00","updated_at":"2026-11-10T12:37:19.909+00:00","tests":[{"title":"Тест: рекомендованные задания","description":"Прогон пайплайна на фиче «Рекомендованные задания»: находимость планшета, отслеживание задания на HUD, понимание счётчиков. Респондент — оператор.","status":"pilot","mode":"shared","demo":false,"scenarios":3,"prototype":{"feature":"recommended-tasks","prototype":"prototype-2","version":1,"in_catalog":true,"title":"Prototype_2","feature_title":"Рекомендованные задания"},"report":{"updated_at":"2026-11-12T15:25:59.134+00:00","size":1442308},"created_at":"2026-11-10T12:37:19.909+00:00","updated_at":"2026-11-12T13:58:30.223+00:00","version":4,"slug":"recommended-tasks-dry-01"},{"title":"Тест: рекомендованные задания — изолированный режим (проверка)","description":"Изолированный режим (маска) и кнопки теста из макета ([TEST]: «Задание», «Готово» слева внизу); в прототипе помечен чит [CHEAT]. Демо-режим, ответы не отправляются. Проверка пайплайна, респондент — оператор.","status":"draft","mode":"isolated","demo":true,"scenarios":3,"prototype":{"feature":"recommended-tasks","prototype":"prototype-2-v2","version":1,"in_catalog":true,"title":"Prototype_2 v2 (читы и кнопки теста)","feature_title":"Рекомендованные задания"},"created_at":"2026-11-11T13:54:32.381+00:00","updated_at":"2026-11-12T12:46:59.393+00:00","version":9,"slug":"recommended-tasks-iso-01"}]}]}</script>
 <script>
 (function () {
   "use strict";
@@ -148,6 +149,7 @@ h1{font-size:28px;line-height:1.2;margin:0 0 6px}.lead{color:var(--muted);margin
       }
       var row = el("div", "row");
       var open = el("a", "btn", "Открыть тест"); open.href = href(t.slug); row.appendChild(open);
+      if (t.report) { var rep = el("a", "btn btn2", "Отчёт"); rep.href = t.slug + "/report.html"; row.appendChild(rep); }
       card.appendChild(row);
       app.appendChild(card);
     });
