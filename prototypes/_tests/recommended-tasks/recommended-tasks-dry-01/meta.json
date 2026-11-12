@@ -16,11 +16,11 @@
     "title": "Prototype_2",
     "feature_title": "Рекомендованные задания"
   },
-  "version": 3,
+  "version": 4,
   "created_at": "2026-11-10T12:37:19.909+00:00",
-  "updated_at": "2026-11-12T12:45:58.382+00:00",
-  "sha256": "16945a1a90d88b9a2e9d746ce62e72064f20207bbf19eb3ff6d1e6be09d26da6",
-  "size": 3884247,
+  "updated_at": "2026-11-12T13:58:30.223+00:00",
+  "sha256": "a83b2d34c03c70dda042ede252101d7a9fec4033b998a34fe7ea06d56129dcad",
+  "size": 3887487,
   "history": [
     {
       "status": "draft",

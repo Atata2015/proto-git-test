@@ -498,6 +498,7 @@ const rid = () => Math.random().toString(36).slice(2, 10);
 const session = {
   test_id: C.test_id, session_id: new Date().toISOString().slice(0, 10) + '-' + rid(),
   respondent: '', started_at: new Date().toISOString(), finished_at: null,
+  stage: '', prev_done: 0,   // статус теста в каталоге (pilot / live …) и сколько раз тест уже пройден в этом браузере
   proto: C.prototype || {}, ua: navigator.userAgent,
   screen: screen.width + 'x' + screen.height, dpr: devicePixelRatio || 1
 };
@@ -589,6 +590,39 @@ async function flush(){
 addEventListener('online', flush);
 if (lsGet(QKEY).length) flush();   // осталось с прошлого раза (вкладку закрыли до отправки) — отправить при открытии
 function showClosed(){ showPanel('<h2>Тест завершён</h2><p class="ut-muted">Сбор ответов закрыт.</p>'); }
+
+/* ---------- Статус теста в каталоге и повторное прохождение (оператор 12.11.2026) ----------
+   Статус — из карточки теста meta.json рядом с HTML (каталог «Юзер-тесты»): HTML при переходе pilot → live не меняется,
+   поэтому оболочка узнаёт статус при открытии.
+   - live: тест уже пройден до конца в этом браузере в live — экран «Вы уже прошли этот тест» (прохождения на пилоте
+     не мешают); draft / pilot — проходить можно сколько угодно; closed — «Тест завершён» сразу, а не после прохождения.
+   - Статус не прочитан (локальный файл, нет сети, чужая карточка) — не блокируем: лучше повтор, чем потерянный респондент.
+   - Пройденные — в localStorage (DKEY): {at, stage, session_id}; брошенное на середине не считается.
+   В данные: session.stage (статус на момент прохождения), session.prev_done (сколько раз уже пройден в этом браузере). */
+const DKEY = 'ut_done_' + C.test_id;
+const META_WAIT_MS = 3000;
+const metaReady = (async () => {
+  if (location.protocol === 'file:') return null;
+  const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+  const tm = setTimeout(() => { if (ctl) ctl.abort(); }, META_WAIT_MS);
+  try {
+    const r = await fetch('meta.json', {cache: 'no-store', signal: ctl ? ctl.signal : undefined});
+    if (!r.ok) return null;
+    const m = await r.json();
+    return m && m.test_id === C.test_id ? m : null;
+  } catch (e) { return null; } finally { clearTimeout(tm); }
+})();
+session.prev_done = lsGet(DKEY).length;
+metaReady.then(m => { session.stage = (m && m.status) || ''; });
+function blockedBy(m){
+  if (!m) return null;
+  if (m.status === 'closed') return 'closed';
+  if (m.status === 'live' && lsGet(DKEY).some(d => d.stage === 'live')) return 'done';
+  return null;
+}
+function showDone(){ showPanel('<h2>Вы уже прошли этот тест</h2><p class="ut-muted">Спасибо за участие! Проходить его ещё раз не нужно.</p>'); }
+const showBlocked = why => why === 'closed' ? showClosed() : showDone();
+function markDone(){ const d = lsGet(DKEY); d.push({at: session.finished_at, stage: session.stage, session_id: session.session_id}); lsSet(DKEY, d); }
 
 /* ---------- Изолированный режим: маска ----------
    В сценарии включены только элементы из active (+ active_always): ID целиком или шаблон «<префикс>/*».
@@ -712,7 +746,7 @@ document.getElementById('viewport').addEventListener('click', e => {
 window.__ut = {
   outbox: [], session, events, answers, summaries, send: sendState,
   dump(){ return {session, events, answers, summaries}; },
-  queue: () => lsGet(QKEY).length, flush, enqueue      // для автотестов и диагностики
+  queue: () => lsGet(QKEY).length, flush, enqueue, meta: metaReady      // для автотестов и диагностики
 };
 document.addEventListener('proto:go', e => {
   const sid = e.detail.screen;
@@ -1045,6 +1079,8 @@ function start(){
   goBtn.onclick = async () => {
     const n = document.getElementById('ut-name');
     if (n){ if (!n.value.trim()){ n.classList.add('err'); hint('Сначала введите имя или ник'); return; } session.respondent = n.value.trim(); }
+    const why = blockedBy(await metaReady);              // статус обычно уже прочитан; нет — ждём не дольше META_WAIT_MS
+    if (why) return showBlocked(why);
     await ensureFullscreen();
     testOn = true;
     session.env = env(); lastEnv = envStr(session.env);
@@ -1236,6 +1272,7 @@ function outro(){
   const qs = (C.outro && C.outro.questions) || [];
   runQuestions(qs, null, async () => {
     session.finished_at = new Date().toISOString();
+    markDone();
     testOn = false; fsGate.classList.remove('on');
     showPanel('<h2>Отправляем ответы…</h2>');
     await enqueue('final', {summaries, answers: answers.filter(a => a.scenario === 'final')});
@@ -1263,7 +1300,10 @@ function finishPanel(){
 
 /* Закрытый тест */
 if (C.close_at && new Date() > new Date(C.close_at)) showClosed();
-else start();
+else {
+  start();
+  metaReady.then(m => { const why = blockedBy(m); if (why && !testOn) showBlocked(why); });
+}
 })();
 </script>
 <!-- ut-shell:end -->
