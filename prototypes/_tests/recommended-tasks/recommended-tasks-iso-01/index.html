@@ -404,6 +404,10 @@ html.ut-panel #ut-panel{display:block}
 #ut button{font:600 15px/1.2 inherit;font-family:inherit;border:0;border-radius:12px;cursor:pointer}
 .ut-main{background:var(--ut-acc);color:#1a1a1a;padding:13px 22px;min-height:44px}
 #ut-panel .ut-main:only-child,.ut-card>.ut-main{margin-top:16px}
+/* Окно «Развернуть на весь экран» (полноэкранный режим потерян): затемнение и кнопка, выше всего */
+#ut-fsgate{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center}
+#ut-fsgate.on{display:flex}
+#ut #ut-fsgo{box-shadow:0 4px 14px rgba(0,0,0,.45)}
 .ut-alt{background:transparent;color:var(--ut-muted);padding:12px 10px;min-height:44px;font-weight:500!important}
 .ut-link{background:none;color:var(--ut-acc);padding:8px 0;font-weight:500!important;text-decoration:underline}
 .ut-lbl{display:block;margin-top:14px;color:var(--ut-muted);font-size:13px}
@@ -758,6 +762,33 @@ const toQ = document.createElement('button'); toQ.id = 'ut-toq'; toQ.type = 'but
 toQ.onclick = () => { if (cur && cur.wait && !cur.done){ cur.wait = false; toQ.classList.remove('on'); block.classList.remove('on'); finishScenario(cur.reached.result); } };
 root.style.setProperty('--ut-ar', String(W / H));
 
+/* Окно «Развернуть на весь экран»: полноэкранный режим потерян на любом шаге теста (браузер свернули и открыли снова,
+   «Назад») — затемнение и одна кнопка. Вернуть режим можно только по тапу (жест пользователя). Показываем при каждой
+   потере, только от «Начать» до конца теста и только где режим вообще есть (сенсорный экран + requestFullscreen;
+   на iPhone API нет — окна нет). Браузер отказал — окно убираем, чтобы не запереть респондента.
+   Время задания не меняется; в лог — hidden / visible (браузер свёрнут / открыт), fs_lost, fs_restored. */
+const fsGate = document.createElement('div'); fsGate.id = 'ut-fsgate';
+fsGate.innerHTML = '<button type="button" class="ut-main" id="ut-fsgo">Развернуть на весь экран</button>';
+root.appendChild(fsGate);
+let testOn = false;                                     // от «Начать» до конца теста
+const fsAvail = () => matchMedia('(pointer:coarse)').matches && typeof document.documentElement.requestFullscreen === 'function';
+const lifeEv = type => events.push({type, scenario: cur ? cur.sc.id : null, t: cur ? now() - cur.t0 : null});
+function fsCheck(){
+  if (document.fullscreenElement || !testOn || !fsAvail()){ fsGate.classList.remove('on'); return; }
+  if (document.visibilityState === 'hidden' || fsGate.classList.contains('on')) return;
+  const a = document.activeElement;
+  if (a && /^(TEXTAREA|INPUT)$/.test(a.tagName)) a.blur();   // клавиатуру — закрыть, иначе она над окном
+  fsGate.classList.add('on');
+}
+document.addEventListener('fullscreenchange', () => { if (testOn && !document.fullscreenElement && fsAvail()) lifeEv('fs_lost'); fsCheck(); });
+document.addEventListener('visibilitychange', () => { if (testOn) lifeEv(document.visibilityState === 'hidden' ? 'hidden' : 'visible'); fsCheck(); });
+document.getElementById('ut-fsgo').onclick = async e => {
+  e.stopPropagation();
+  await ensureFullscreen();
+  if (document.fullscreenElement) lifeEv('fs_restored');
+  fsGate.classList.remove('on');
+};
+
 /* ---------- Кнопки теста из макета («[TEST] …» в Figma → SPEC.testButtons) ----------
    Роли: task — «Задание», done — «Готово» (видна только после выполнения), skip — «Не получается» (до выполнения,
    с подтверждением). Нарисованная кнопка заменяет кнопку оболочки своей роли; не нарисованные — по умолчанию.
@@ -946,6 +977,7 @@ function start(){
     const n = document.getElementById('ut-name');
     if (n){ if (!n.value.trim()){ n.classList.add('err'); hint('Сначала введите имя или ник'); return; } session.respondent = n.value.trim(); }
     await ensureFullscreen();
+    testOn = true;
     session.env = env(); lastEnv = envStr(session.env);
     enqueue('start', {}).then(() => { if (sendState.closed) showClosed(); });   // приёмник закрыл тест раньше close_at в HTML
     taskCard(0);
@@ -1124,6 +1156,7 @@ function outro(){
   const qs = (C.outro && C.outro.questions) || [];
   runQuestions(qs, null, async () => {
     session.finished_at = new Date().toISOString();
+    testOn = false; fsGate.classList.remove('on');
     showPanel('<h2>Отправляем ответы…</h2>');
     await enqueue('final', {summaries, answers: answers.filter(a => a.scenario === 'final')});
     if (!C.endpoint){
