@@ -509,16 +509,29 @@ function env(){
           fullscreen: !!document.fullscreenElement};
 }
 const envStr = e => e.viewport + ' ' + e.orientation + (e.fullscreen ? ' fs' : '');
-let lastEnv = '', envTimer = null;
+/* Смена условий — только во время задания и только устоявшаяся (оператор 12.11.2026, находка 8.4, п. 5):
+   - на вопросах и карточке не пишем: там шумит клавиатура, а условия всё равно снимаются на старте следующего задания;
+   - условия должны не меняться ENV_STABLE_MS, браузер не свёрнут, окна «Развернуть» нет. Сворачивание с возвратом
+     (Samsung Browser: 745×315 fs → hidden → … → 745×267 → 745×360 fs) не даёт ни одного env и не идёт в env_changes —
+     оно видно по hidden / visible / fs_lost / fs_restored; поворот экрана даёт один env;
+   - t — момент первого изменения, а не момент записи. */
+const ENV_STABLE_MS = 1000;
+let lastEnv = '', envTimer = null, envT = null;
+const envMuted = () => document.visibilityState === 'hidden' || fsGate.classList.contains('on');
+function envReset(){ clearTimeout(envTimer); envTimer = null; envT = null; }
 function envChanged(){
   clearTimeout(envTimer);
+  if (!cur || cur.done){ envT = null; return; }
+  if (envT == null) envT = now() - cur.t0;
   envTimer = setTimeout(() => {
+    const t = envT; envReset();
+    if (!cur || cur.done || envMuted()) return;
     const e = env(), k = envStr(e);
     if (k === lastEnv) return;
     lastEnv = k;
-    events.push(Object.assign({type: 'env', scenario: cur ? cur.sc.id : null, t: cur ? now() - cur.t0 : null}, e));
-    if (cur && !cur.done) cur.env_changes++;
-  }, 250);
+    events.push(Object.assign({type: 'env', scenario: cur.sc.id, t}, e));
+    cur.env_changes++;
+  }, ENV_STABLE_MS);
 }
 addEventListener('resize', envChanged);
 document.addEventListener('fullscreenchange', envChanged);
@@ -581,6 +594,7 @@ const ISOLATED = C.mode === 'isolated';
 /* Читы прототипа (служебные кнопки дизайнера, «[CHEAT] …» в Figma): ID оставшихся в сборке читов даёт inject_test.py.
    Тап по читу работает как обычно, пишется как kind = cheat; если чит нажат до выполнения задания — результат wrong_path. */
 const CHEATS = new Set(C.cheat_ids || []);
+const MISS = {dead: true, overlay_dead: true, masked: true};   // промахи (offpath — не промах)
 const maskAllows = (pats, id) => pats.some(p => id === p || (p.slice(-2) === '/*' && id.indexOf(p.slice(0, -1)) === 0));
 /* ID областей прокрутки — в порядке, в котором движок строит DOM (экран: области вглубь, потом оверлеи).
    Сверяется с DOM: число областей и ID хотспотов внутри; не сошлось — прокрутку не блокируем (маска тапов работает). */
@@ -599,6 +613,27 @@ function applyMask(pats){
     const on = !pats || maskAllows(pats, a.id) || pats.some(p => (p.slice(-2) === '/*' ? p.slice(0, -1) : p + '/').indexOf(a.id + '/') === 0);
     a.el.classList.toggle('ut-lock', !on); a.el.dataset.utArea = a.id;
   });
+}
+/* Зоны «путь вне прототипа» (C.zones, размечаются при подготовке теста): место, которое в игре ведёт к цели, а в прототипе
+   не работает (нерабочая плитка «Кланы»). Проверяются только тапы, которые иначе были бы промахом (dead, overlay_dead,
+   masked); работающая кнопка важнее зоны. В задании, где зона — верный путь (sc.offpath), тап — kind = offpath (не промах,
+   без вопроса по промаху; вопрос — только если задан sc.offpath_question); в остальных — промах с target = ID зоны.
+   rect — в координатах экрана; у зоны в области прокрутки (scroll) — в координатах её содержимого. */
+const ZONES = C.zones || {};
+function zoneAt(x, y, sx, sy, scEl){
+  for (const id of Object.keys(ZONES)){
+    const z = ZONES[id];
+    if (z.screen !== P.screen || (z.overlay && z.overlay !== P.overlay)) continue;
+    let px = x, py = y;
+    if (z.scroll){
+      const a = scEl && scrollAreas.find(p => p.el === scEl);
+      if (!a || a.id !== z.scroll) continue;
+      px = sx; py = sy;
+    }
+    const r = z.rect;
+    if (px >= r[0] && px < r[0] + r[2] && py >= r[1] && py < r[1] + r[3]) return id;
+  }
+  return null;
 }
 /* Попытка прокрутить заблокированную область: одно событие на жест (сдвиг пальца больше 12 px). */
 let gesture = null;
@@ -622,6 +657,23 @@ function stageXY(cx, cy){
   const r = stageEl.getBoundingClientRect(), s = r.width / W;
   return {x: Math.round((cx - r.left) / s), y: Math.round((cy - r.top) / s), s};
 }
+/* Итог тапа — после анимаций движка (P2, найдено 10.11.2026): оригинал html-prototype анимирует закрытие оверлея (exit)
+   и убирает его из стека только в onfinish, событий не шлёт; сразу после тапа оверлей ещё числится открытым.
+   Ждём конечные анимации в сцене (не дольше SETTLE_MAX), затем кадр (onfinish движка) и только потом смотрим результат.
+   Работает с любым движком; в форке закрытие мгновенное — ждать нечего. */
+const SETTLE_MAX = 1000;
+const stageAnims = () => document.getAnimations ? document.getAnimations().filter(a => {
+  const t = a.effect && a.effect.target;
+  return a.playState === 'running' && t && stageEl.contains(t) && a.effect.getComputedTiming().endTime !== Infinity;
+}) : [];
+function afterSettle(fn){
+  setTimeout(() => {
+    const an = stageAnims();
+    if (!an.length){ fn(); return; }
+    Promise.race([Promise.all(an.map(a => a.finished.catch(() => {}))), new Promise(r => setTimeout(r, SETTLE_MAX))])
+      .then(() => requestAnimationFrame(() => setTimeout(fn, 0)));
+  }, 0);
+}
 document.getElementById('viewport').addEventListener('click', e => {
   if (!cur || cur.done || !stageEl.contains(e.target)) return;
   if (e.target.closest('.ut-tb')) return;            // кнопка теста из макета — не тап в прототипе
@@ -638,13 +690,18 @@ document.getElementById('viewport').addEventListener('click', e => {
   else if (e.target.closest('.scrim')){ kind = 'outside_overlay'; target = P.overlay; }       // тап мимо оверлея — закрытие, не промах
   const sc = e.target.closest('.scroll');
   if (sc){ const cr = sc.querySelector('.content').getBoundingClientRect(); sx = Math.round((e.clientX - cr.left) / s); sy = Math.round((e.clientY - cr.top) / s); }
+  if (MISS[kind]){                                     // путь вне прототипа: только вместо промаха
+    const z = zoneAt(x, y, sx, sy, sc);
+    if (z && (cur.sc.offpath || []).indexOf(z) >= 0){ kind = 'offpath'; target = z; }
+    else if (z && kind !== 'masked') target = z;       // промах с названием места; у masked остаётся ID выключенной кнопки
+  }
   const t = now() - cur.t0;
   const prev = cur.taps[cur.taps.length - 1];
   const dup = !!prev && t - prev.t < 350 && Math.abs(prev.x - x) < 40 && Math.abs(prev.y - y) < 40;
   const ev = {type: 'tap', scenario: cur.sc.id, n: cur.taps.length + 1, t, screen: P.screen, overlay: P.overlay,
               x, y, sx, sy, kind, target, dup, after_screen: null, after_overlay: null};
   cur.taps.push(ev); events.push(ev);
-  setTimeout(() => { ev.after_screen = P.screen; ev.after_overlay = P.overlay; checkSuccess(); tbRender(); }, 0);
+  afterSettle(() => { ev.after_screen = P.screen; ev.after_overlay = P.overlay; checkSuccess({t, n: ev.n}); tbRender(); });
 }, true);
 
 window.__ut = {
@@ -670,18 +727,23 @@ function successMet(cond){
   if (cond.state_any && !Object.entries(cond.state_any).some(([k, v]) => st[k] == v)) return false;
   return true;
 }
-/* Цель — экран/оверлей из критерия (без учёта переменных). Нужна для метрик «первое попадание» и «дошёл, но ушёл». */
+/* Цель — экран/оверлей из критерия (без учёта переменных). Нужна для метрик «первое попадание» и «дошёл, но ушёл».
+   Если цель уже на старте задания (c.hit.na), метрики пустые: target_visits = null отличает «н/п» от «не дошёл» (0). */
 function atTarget(cond){
   if (!cond || (!cond.screen && !cond.overlay)) return false;
   if (cond.screen && P.screen !== cond.screen) return false;
   if (cond.overlay && P.overlay !== cond.overlay) return false;
   return true;
 }
-function trackTarget(c){
+function trackTarget(c, tap){
+  if (c.hit.na) return;
   const at = atTarget(c.sc.success), h = c.hit;
   if (at && !h.at){
     h.visits++;
-    if (h.first_tap == null){ h.first_tap = c.taps.filter(e => !e.dup).length; h.first_ms = now() - c.t0; }
+    if (h.first_tap == null){
+      const taps = tap ? c.taps.slice(0, tap.n) : c.taps;
+      h.first_tap = taps.filter(e => !e.dup).length; h.first_ms = tap ? tap.t : now() - c.t0;
+    }
   }
   if (!at && h.at) h.left = true;
   h.at = at;
@@ -692,19 +754,20 @@ const cheatUsed = c => c.taps.some(e => e.kind === 'cheat');
 /* Как завершается сценарий: auto — сразу при выполнении критерия; done — респондент сам нажимает «Готово»
    (смотрит результат сколько угодно, как в игре). По умолчанию done, если цель — оверлей (подсказка, окно награды). */
 const finishMode = sc => sc.finish || (sc.success && sc.success.overlay ? 'done' : 'auto');
-function checkSuccess(){
+/* tap — {t, n}: проверка по итогу тапа (после анимаций); время и число тапов — на момент самого тапа. */
+function checkSuccess(tap){
   if (!cur || cur.done || cur.reached) return;
-  trackTarget(cur);
+  trackTarget(cur, tap);
   if (!successMet(cur.sc.success)) return;
   const result = viaMissing(cur).length || cheatUsed(cur) ? 'wrong_path' : 'success';
-  if (cur.finish === 'done') reachScenario(result); else autoReach(result);
+  if (cur.finish === 'done') reachScenario(result, tap); else autoReach(result, tap);
 }
 /* finish: auto — задание засчитано: метрики фиксируются, прототип блокируется (экран результата остаётся на месте),
    плашка «Задание завершено» 2 с, затем на её месте кнопка «К вопросам»; вопросы — только по нажатию
    (оператор 11.11.2026: раньше вопросы открывались сами через ~1 с, респондент не успевал понять, что задание выполнено).
    Текст плашки нейтральный: она же показывается при wrong_path. scenario_end и done_ms — по нажатию кнопки. */
-function autoReach(result){
-  const c = cur; markReached(result);
+function autoReach(result, tap){
+  const c = cur; markReached(result, tap);
   c.wait = true; pill.classList.remove('on'); sheet.classList.remove('on'); block.classList.add('on'); tbRender();
   afterQuiet(c, () => {
     toast.textContent = 'Задание завершено'; toast.classList.add('on');
@@ -717,11 +780,7 @@ function autoReach(result){
    не ждём; на всякий случай — не дольше QUIET_MAX от выполнения. */
 const QUIET_MS = 1500, QUIET_MAX = 8000;
 function protoBusy(){
-  const anim = document.getAnimations ? document.getAnimations().some(a => {
-    const t = a.effect && a.effect.target;
-    return a.playState === 'running' && t && stageEl.contains(t) && a.effect.getComputedTiming().endTime !== Infinity;
-  }) : false;
-  if (anim) return true;
+  if (stageAnims().length) return true;
   const E = (SPEC.screens[P.screen] || {}).effects || {};
   return typeof P.effectVisible === 'function' && Object.keys(E).some(id => E[id].holdMs !== null && !E[id].persist && P.effectVisible(id));
 }
@@ -736,15 +795,15 @@ function afterQuiet(c, fn, alive){
   setTimeout(tick, 100);
 }
 /* finish: done — задание выполнено: метрики фиксируются на этот момент, прототип остаётся, появляется «Готово». */
-function markReached(result){
+function markReached(result, tap){
   const c = cur;
-  c.reached = {result, t: now() - c.t0, n: c.taps.length, via_missing: viaMissing(c).join(', ')};
+  c.reached = {result, t: tap ? tap.t : now() - c.t0, n: tap ? tap.n : c.taps.length, via_missing: viaMissing(c).join(', ')};
   events.push({type: 'reached', scenario: c.sc.id, t: c.reached.t, screen: P.screen, overlay: P.overlay, result});
 }
 /* finish: done — «Готово» тоже не сразу (оператор 11.11.2026): по тому же правилу, что плашка у auto, — когда в прототипе
    всё закончится, и ещё QUIET_MS. Прототип при этом не блокируется: респондент смотрит результат. */
-function reachScenario(result){
-  const c = cur; markReached(result);
+function reachScenario(result, tap){
+  const c = cur; markReached(result, tap);
   afterQuiet(c, () => { c.doneReady = true; doneBtn.classList.add('on'); tbRender(); }, () => !c.done);
 }
 
@@ -778,15 +837,20 @@ function fsCheck(){
   if (document.visibilityState === 'hidden' || fsGate.classList.contains('on')) return;
   const a = document.activeElement;
   if (a && /^(TEXTAREA|INPUT)$/.test(a.tagName)) a.blur();   // клавиатуру — закрыть, иначе она над окном
-  fsGate.classList.add('on');
+  fsGate.classList.add('on'); envReset();
 }
 document.addEventListener('fullscreenchange', () => { if (testOn && !document.fullscreenElement && fsAvail()) lifeEv('fs_lost'); fsCheck(); });
-document.addEventListener('visibilitychange', () => { if (testOn) lifeEv(document.visibilityState === 'hidden' ? 'hidden' : 'visible'); fsCheck(); });
+document.addEventListener('visibilitychange', () => {
+  if (testOn) lifeEv(document.visibilityState === 'hidden' ? 'hidden' : 'visible');
+  if (document.visibilityState === 'hidden') envReset(); else envChanged();   // сжатие экрана перед сворачиванием — не смена условий
+  fsCheck();
+});
 document.getElementById('ut-fsgo').onclick = async e => {
   e.stopPropagation();
   await ensureFullscreen();
   if (document.fullscreenElement) lifeEv('fs_restored');
   fsGate.classList.remove('on');
+  envChanged();                                         // окно убрано: условия — заново, после того как устоятся
 };
 
 /* ---------- Кнопки теста из макета («[TEST] …» в Figma → SPEC.testButtons) ----------
@@ -1006,12 +1070,15 @@ function runScenario(idx){
   cur = {sc, idx, t0: now(), taps: [], visited: [P.screen], done: false, result: null, env_changes: 0,
          finish: finishMode(sc), reached: null, masked_scrolls: 0,
          mask: ISOLATED ? (sc.active || []).concat(C.active_always || []) : null,
-         hit: {first_tap: null, first_ms: null, visits: 0, at: false, left: false}};
+         hit: {first_tap: null, first_ms: null, visits: 0, at: false, left: false, na: false}};
+  // экран/оверлей цели — уже на старте (цель — переменные на стартовом экране): «первое попадание» и «дошёл, но ушёл»
+  // не имеют смысла — пишем пустыми (оператор 12.11.2026, находка 8.5, п. 3)
+  cur.hit.na = atTarget(sc.success);
   applyMask(cur.mask);
   events.push({type: 'scenario_start', scenario: sc.id, t: 0, screen: P.screen});
   // условия на старте задания (например, полноэкранный режим только что вернули по «Начать задание»): в лог с t = 0,
   // но не в env_changes — это не смена условий во время задания
-  clearTimeout(envTimer);
+  envReset();
   const e0 = env(), k0 = envStr(e0);
   if (k0 !== lastEnv){ lastEnv = k0; events.push(Object.assign({type: 'env', scenario: sc.id, t: 0}, e0)); }
   hidePanel(); pill.classList.add('on');
@@ -1033,7 +1100,6 @@ pill.onclick = () => {
 doneBtn.onclick = () => { if (cur && !cur.done && !cur.wait && cur.reached && cur.doneReady){ sheet.classList.remove('on'); finishScenario(cur.reached.result); } };
 
 /* Промах: пустое место, пустое место в оверлее, выключенный маской элемент. */
-const MISS = {dead: true, overlay_dead: true, masked: true};
 /* Сводка сценария. При finish: done метрики (время, тапы, промахи, путь мимо via) — на момент выполнения задания,
    как у auto; время до «Готово» и тапы после выполнения — отдельно (done_ms, after_taps). */
 function finishScenario(result){
@@ -1045,6 +1111,7 @@ function finishScenario(result){
   const dead = real.filter(e => MISS[e.kind]);
   const masked = real.filter(e => e.kind === 'masked');
   const cheats = real.filter(e => e.kind === 'cheat');
+  const offp = real.filter(e => e.kind === 'offpath');
   const first = real[0];
   c.summary = {
     scenario: c.sc.id, result, time_ms: r ? r.t : t,
@@ -1053,12 +1120,14 @@ function finishScenario(result){
     first_tap_dead: first ? !!MISS[first.kind] : null,
     path: c.visited.join(' > '), task_reopens: events.filter(e => e.type === 'task_reopen' && e.scenario === c.sc.id).length,
     via_missing: r ? r.via_missing : viaMissing(c).join(', '),
-    target_first_tap: c.hit.first_tap, target_first_ms: c.hit.first_ms, target_visits: c.hit.visits, left_target: c.hit.left,
+    target_first_tap: c.hit.first_tap, target_first_ms: c.hit.first_ms,
+    target_visits: c.hit.na ? null : c.hit.visits, left_target: c.hit.na ? null : c.hit.left,
     env: lastEnv, env_changes: c.env_changes,
     finish: c.finish, done_ms: r ? t : null, after_taps: r ? c.taps.slice(r.n).filter(e => !e.dup).length : null,
     mode: ISOLATED ? 'isolated' : 'shared', masked_taps: masked.length, masked_first: masked.length ? masked[0].target : '',
     masked_scrolls: c.masked_scrolls,
-    cheat_taps: cheats.length, cheat_first: cheats.length ? cheats[0].target : ''
+    cheat_taps: cheats.length, cheat_first: cheats.length ? cheats[0].target : '',
+    offpath_taps: offp.length, offpath_first: first && first.kind === 'offpath' ? first.target : ''
   };
   summaries.push(c.summary);
   pill.classList.remove('on'); doneBtn.classList.remove('on'); tbRender();
@@ -1074,6 +1143,12 @@ function askScenario(c){
     qs.push({id: c.sc.id + '_MISS', hyp: (c.sc.hypotheses || []).join(','), type: 'text', auto: 'misclick',
       text: 'В этом задании вы нажали в отмеченное место. Что вы ожидали там найти или сделать?',
       image: {screen: d.screen, overlay: d.overlay}, mark: {x: d.x, y: d.y}, tap_ref: d.n});
+  }
+  const op = c.counted.find(e => !e.dup && e.kind === 'offpath');   // путь вне прототипа: вопрос — только если включён намеренно
+  if (op && c.sc.offpath_question){
+    qs.push({id: c.sc.id + '_OFFPATH', hyp: (c.sc.hypotheses || []).join(','), type: 'text', auto: 'offpath',
+      text: typeof c.sc.offpath_question === 'string' ? c.sc.offpath_question : 'В этом задании вы нажали в отмеченное место. Что вы ожидали там найти?',
+      image: {screen: op.screen, overlay: op.overlay}, mark: {x: op.x, y: op.y}, tap_ref: op.n});
   }
   (c.sc.questions || []).forEach(q => qs.push(q));
   runQuestions(qs, c, () => {
