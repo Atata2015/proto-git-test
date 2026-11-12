@@ -382,6 +382,18 @@ html.ut-panel #rotate{display:none!important}
 #ut-panel{position:fixed;inset:0;z-index:200;background:var(--ut-bg);overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;
   padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
 html.ut-panel #ut-panel{display:block}
+/* Своя полоска прокрутки и стрелка «ниже есть ещё» (системная на телефоне видна только во время прокрутки) */
+#ut-panel{scrollbar-width:none}
+#ut-panel::-webkit-scrollbar{display:none}
+#ut-sb{position:fixed;right:max(3px,env(safe-area-inset-right));width:5px;z-index:201;pointer-events:none;display:none}
+#ut-sb.on{display:block}
+#ut-sb::before{content:"";position:absolute;left:0;right:0;top:6px;bottom:6px;border-radius:3px;background:rgba(255,255,255,.10)}
+#ut-sb i{position:absolute;left:0;top:0;width:100%;border-radius:3px;background:rgba(255,255,255,.55)}
+#ut #ut-more{position:fixed;left:50%;width:32px;height:32px;min-height:0;margin-left:-16px;padding:0;border-radius:50%;z-index:201;
+  background:#22c55e;border:0;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.35);
+  display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+#ut #ut-more.on{display:flex;opacity:1}
+#ut-more svg{width:16px;height:16px;display:block}
 .ut-card{max-width:720px;margin:0 auto}
 #ut h1{font-size:22px;margin:4px 0 12px}
 #ut h2{font-size:18px;line-height:1.35;margin:4px 0 14px;font-weight:600}
@@ -392,6 +404,10 @@ html.ut-panel #ut-panel{display:block}
 #ut button{font:600 15px/1.2 inherit;font-family:inherit;border:0;border-radius:12px;cursor:pointer}
 .ut-main{background:var(--ut-acc);color:#1a1a1a;padding:13px 22px;min-height:44px}
 #ut-panel .ut-main:only-child,.ut-card>.ut-main{margin-top:16px}
+/* Окно «Развернуть на весь экран» (полноэкранный режим потерян): затемнение и кнопка, выше всего */
+#ut-fsgate{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center}
+#ut-fsgate.on{display:flex}
+#ut #ut-fsgo{box-shadow:0 4px 14px rgba(0,0,0,.45)}
 .ut-alt{background:transparent;color:var(--ut-muted);padding:12px 10px;min-height:44px;font-weight:500!important}
 .ut-link{background:none;color:var(--ut-acc);padding:8px 0;font-weight:500!important;text-decoration:underline}
 .ut-lbl{display:block;margin-top:14px;color:var(--ut-muted);font-size:13px}
@@ -404,31 +420,66 @@ html.ut-panel #ut-panel{display:block}
 .ut-opts.scale{flex-direction:row}
 .ut-opts.scale button{flex:1;text-align:center;padding:12px 0}
 .ut-scale-l{display:flex;justify-content:space-between;color:var(--ut-muted);font-size:12px;margin-top:6px}
-.ut-frame{position:relative;width:100%;max-height:58vh;max-width:calc(58vh * 1.72);border-radius:8px;overflow:hidden;background:#000;margin:4px 0 6px}
+.ut-frame{position:relative;width:100%;max-width:calc(78vh * var(--ut-ar,2.17));border-radius:8px;overflow:hidden;background:#000;margin:4px 0 6px}
+.ut-frame.zoomable{cursor:zoom-in}
+.ut-frame.zoomable::after{content:"⤢";position:absolute;right:6px;bottom:6px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:17px;line-height:28px;text-align:center;pointer-events:none}
+.ut-zoom-tip{margin-top:-2px!important}
 .ut-frame img{position:absolute;left:0;top:0;width:100%;height:100%;display:block;pointer-events:none}
 .ut-clip{position:absolute;overflow:hidden;pointer-events:none}
-.ut-frame.tap{cursor:crosshair;outline:2px dashed var(--ut-line)}
-.ut-frame.thumb{width:150px;max-width:none;display:inline-block;margin:6px 8px 0 0;cursor:zoom-in}
+.ut-frame.tap{cursor:crosshair;outline:2px solid var(--ut-acc);outline-offset:0}   /* картинка, на которую нужно нажать, — жёлтая рамка; для просмотра — без рамки */
+.ut-frame.thumb{width:150px;max-width:none;display:inline-block;vertical-align:top;margin:6px 8px 0 0}
+.ut-frame.thumb::after{width:22px;height:22px;line-height:22px;font-size:13px;right:4px;bottom:4px}
 .ut-mark{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;border:3px solid var(--ut-acc);background:rgba(245,211,58,.35);pointer-events:none}
 .ut-mark.ref{border-color:#ff5c5c;background:rgba(255,92,92,.35)}
 #ut-strip{white-space:normal}
-#ut-pill{position:fixed;top:max(6px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:150;display:none;
-  background:rgba(20,20,24,.72)!important;color:#fff!important;padding:7px 16px!important;font-size:13px!important;border:1px solid rgba(255,255,255,.25)!important;border-radius:999px!important;backdrop-filter:blur(6px)}
-#ut-pill.on{display:block}
+#ut-bar{position:fixed;top:max(6px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:150;display:flex;gap:8px;pointer-events:none}
+#ut-pill,#ut-done{display:none;pointer-events:auto;padding:7px 16px!important;font-size:13px!important;border-radius:999px!important}
+#ut-pill{background:rgba(20,20,24,.72)!important;color:#fff!important;border:1px solid rgba(255,255,255,.25)!important;backdrop-filter:blur(6px)}
+#ut-done{background:#2bb673!important;color:#fff!important;border:1px solid rgba(255,255,255,.35)!important;box-shadow:0 2px 12px rgba(0,0,0,.45)}
+#ut-pill.on,#ut-done.on{display:block}
+html.ut-tb-task #ut-pill,html.ut-tb-done #ut-done{display:none!important}
+.ut-tb{position:absolute;z-index:60;display:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ut-tb.on{display:block}
+.ut-tb img{display:block;width:100%;height:100%;pointer-events:none}
+.ut-tb:active{filter:brightness(.8)}
+.ut-tb.pop{animation:ut-pop .5s ease-out 2}
+#ut-done.on{animation:ut-pop .5s ease-out 2}
+@keyframes ut-pop{50%{transform:scale(1.15)}}
 #ut-sheet{position:fixed;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%);width:min(560px,calc(100vw - 32px));z-index:160;display:none;
   background:var(--ut-card);border:1px solid var(--ut-line);border-radius:14px;padding:14px 16px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
 #ut-sheet.on{display:block}
 .ut-task{font-size:16px;font-weight:600}
-#ut-toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;z-index:170;background:#2bb673;color:#fff;font-weight:600;padding:12px 22px;border-radius:999px;transition:.25s;pointer-events:none}
+#ut-toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;z-index:170;background:#2bb673;color:#fff;font-weight:600;padding:12px 22px;border-radius:0;transition:.25s;pointer-events:none}
+/* finish: auto — пауза после выполнения: прототип заблокирован, на месте плашки — кнопка «К вопросам» */
+#ut-block{position:fixed;inset:0;z-index:145;display:none}
+#ut-block.on{display:block}
+#ut #ut-toq{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:170;display:none;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+#ut #ut-toq.on{display:block;animation:ut-toq-in .25s ease-out}
+@keyframes ut-toq-in{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translateX(-50%)}}
 #ut-toast.on{opacity:1;transform:translate(-50%,0)}
-#ut-zoom{position:fixed;inset:0;z-index:250;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;padding:16px}
-#ut-zoom.on{display:flex}
-#ut-zoom .ut-frame{max-height:90vh;max-width:calc(90vh * 1.72)}
+#ut-zoom{position:fixed;inset:0;z-index:250;background:rgba(0,0,0,.92);display:none}
+#ut-zoom.on{display:block}
+.ut-zwrap{position:absolute;inset:0;overflow:auto;-webkit-overflow-scrolling:touch;display:flex;padding:8px}
+#ut-zoom .ut-frame{flex:none;margin:auto;max-width:none;width:min(calc(100vw - 16px),calc((100vh - 16px) * var(--ut-ar,2.17)));cursor:zoom-in;border-radius:4px}
+#ut-zoom.big .ut-frame{width:calc(min(calc(100vw - 16px),calc((100vh - 16px) * var(--ut-ar,2.17))) * 2.5);cursor:zoom-out}
+.ut-zx{position:absolute;top:max(8px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));width:40px;height:40px;border-radius:50%!important;background:rgba(20,20,24,.8)!important;color:#fff!important;font-size:18px!important;border:1px solid rgba(255,255,255,.3)!important}
+.ut-zhint{position:absolute;left:50%;bottom:max(8px,env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(20,20,24,.7);color:#fff;font-size:12px;padding:5px 12px;border-radius:999px;pointer-events:none;white-space:nowrap}
+#ut-zoom.big .ut-zhint{display:none}
+/* Неактивная кнопка (нет ответа на обязательный вопрос): серая, но нажимается — показывает подсказку */
+#ut .ut-main.ut-off{background:#4a4d55;color:#9aa0ab}
+#ut-hint{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);z-index:300;max-width:calc(100vw - 48px);
+  background:rgba(20,21,25,.96);color:var(--ut-fg);border:1px solid var(--ut-line);border-radius:12px;padding:12px 18px;
+  text-align:center;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+#ut-hint.on{opacity:1;transform:translate(-50%,-50%)}
 .shake{animation:ut-shake .3s}
 @keyframes ut-shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
-@media (prefers-reduced-motion:reduce){.shake{animation:none}#ut-toast{transition:none}}
+@media (prefers-reduced-motion:reduce){.shake,#ut-done.on,#ut #ut-toq.on{animation:none}#ut-toast{transition:none}}
+/* Изолированный режим: выключенный элемент без эффекта нажатия, заблокированная область не листается */
+html.ut .hit.ut-off{cursor:default}
+html.ut .hit.ut-off.press:active{background:none}
+html.ut .scroll.ut-lock{overflow:hidden!important;touch-action:none}
 </style>
-<script>const UT_CONFIG = {"test_id": "recommended-tasks-dry-01", "title": "Тест: рекомендованные задания", "prototype": {"feature": "recommended-tasks", "prototype": "prototype-2", "version": 1}, "mode": "shared", "endpoint": "https://script.google.com/macros/s/AKfycbzdO-bBaLGWyMNOub8NUtQcFH6Esfj6h8TtMNtH-Iqel0TVFU7FUFgBjuuTcbtEhl8IGw/exec", "token": "recommen-d5beb54f70cb", "close_at": "", "intro": {"title": "Добро пожаловать на тест", "text": "Вы пройдёте 3 коротких задания в прототипе игры. Подсказок не будет — если что-то не получается, это нормально: мы проверяем интерфейс, а не вас.\n\nПравила:\n• проходите задания по порядку;\n• не перезагружайте страницу;\n• после каждого задания ответьте на пару вопросов.\n\nПрототип работает в горизонтальной ориентации.", "ask_name": true}, "scenarios": [{"id": "S1", "title": "Найти рекомендованные задания", "task": "Вы зашли в игру и хотите посмотреть, какие задания вам сейчас советуют выполнить. Найдите их.", "hypotheses": ["H5"], "start": "Frame_0", "success": {"screen": "Frame_1"}, "misclick_followup": true, "questions": [{"id": "S1_Q1", "hyp": "H5", "kind": "behavior", "type": "tap", "image": {"screen": "Frame_0"}, "text": "Где на экране игры вы в первую очередь стали бы искать задания, которые вам советуют? Нажмите на это место."}, {"id": "S1_Q2", "hyp": "H5", "kind": "difficulty", "type": "scale", "min": 1, "max": 5, "labels": ["Очень сложно", "Очень легко"], "text": "Насколько легко было их найти?"}]}, {"id": "S2", "title": "Включить отслеживание задания про работу", "task": "Вы собираетесь поработать и хотите во время игры видеть, сколько смен осталось до выполнения задания про работу. Сделайте так, чтобы это было видно.", "hypotheses": ["H1", "H2", "H3"], "start": "Frame_1", "success": {"screen": "Frame_1", "state": {"card_2": "Check"}}, "misclick_followup": true, "questions": [{"id": "S2_Q1", "hyp": "H2", "kind": "expectation", "type": "tap", "image": {"screen": "Frame_0"}, "text": "Где на экране игры, по-вашему, теперь будет видно это задание? Нажмите на это место."}, {"id": "S2_Q2", "hyp": "H2", "kind": "expectation", "type": "text", "recall": true, "text": "Что, по-вашему, изменилось в игре после вашего действия?"}, {"id": "S2_Q3", "hyp": "H3", "kind": "understanding", "type": "choice", "image": {"screen": "Frame_1"}, "mark": {"x": 811, "y": 343}, "text": "Что показывает отмеченное на картинке число?", "options": ["Сколько любых ежедневных задач уже выполнено", "Прогресс задания, которое под ним", "Сколько наград можно забрать", "Не знаю"]}]}, {"id": "S3", "title": "Узнать награду за ежедневный счётчик", "task": "Узнайте, какую дополнительную награду вы получите, если выполните сегодняшние ежедневные задачи.", "hypotheses": ["H4"], "start": "Frame_1", "success": {"screen": "Frame_1", "overlay": "overlay_Tooltip_1"}, "misclick_followup": true, "questions": [{"id": "S3_Q1", "hyp": "H4", "kind": "understanding", "type": "text", "recall": true, "text": "Что вы получите, когда выполните все сегодняшние ежедневные задачи? Опишите своими словами."}, {"id": "S3_Q2", "hyp": "H4", "kind": "difficulty", "type": "scale", "min": 1, "max": 5, "labels": ["Очень сложно", "Очень легко"], "text": "Насколько легко было это узнать?"}]}], "outro": {"questions": [{"id": "F_Q1", "kind": "difficulty", "type": "scale", "min": 1, "max": 5, "labels": ["Совсем непонятно", "Всё понятно"], "text": "Насколько в целом понятно, как устроены советуемые задания?"}, {"id": "F_Q2", "kind": "difficulty", "type": "text", "optional": true, "text": "Что было самым непонятным?"}, {"id": "F_Q3", "kind": "difficulty", "type": "text", "optional": true, "text": "Что бы вы изменили?"}], "thanks": "Спасибо! Ответы отправлены. Страницу можно закрыть."}};</script>
+<script>const UT_CONFIG = {"test_id": "recommended-tasks-dry-01", "title": "Тест: рекомендованные задания", "prototype": {"feature": "recommended-tasks", "prototype": "prototype-2", "version": 1}, "mode": "shared", "endpoint": "https://script.google.com/macros/s/AKfycbzdO-bBaLGWyMNOub8NUtQcFH6Esfj6h8TtMNtH-Iqel0TVFU7FUFgBjuuTcbtEhl8IGw/exec", "token": "recommen-d5beb54f70cb", "close_at": "", "intro": {"title": "Добро пожаловать на тест", "text": "Вы пройдёте 3 коротких задания в прототипе игры. Подсказок не будет — если что-то не получается, это нормально: мы проверяем интерфейс, а не вас.\n\nПравила:\n• проходите задания по порядку;\n• не перезагружайте страницу;\n• после каждого задания ответьте на пару вопросов.\n\nПрототип работает в горизонтальной ориентации.", "ask_name": true}, "scenarios": [{"id": "S1", "title": "Найти рекомендованные задания", "task": "Вы зашли в игру и хотите посмотреть, какие задания вам сейчас советуют выполнить. Найдите их.", "hypotheses": ["H5"], "start": "Frame_0", "success": {"screen": "Frame_1"}, "misclick_followup": true, "questions": [{"id": "S1_Q1", "hyp": "H5", "kind": "behavior", "type": "tap", "image": {"screen": "Frame_0"}, "text": "Где на экране игры вы в первую очередь стали бы искать задания, которые вам советуют? Нажмите на это место."}, {"id": "S1_Q2", "hyp": "H5", "kind": "difficulty", "type": "scale", "min": 1, "max": 5, "labels": ["Очень сложно", "Очень легко"], "text": "Насколько легко было их найти?"}]}, {"id": "S2", "title": "Включить отслеживание задания про работу", "task": "Вы собираетесь поработать и хотите во время игры видеть, сколько смен осталось до выполнения задания про работу. Сделайте так, чтобы это было видно.", "hypotheses": ["H1", "H2", "H3"], "start": "Frame_1", "success": {"screen": "Frame_1", "state": {"card_2": "Check"}}, "misclick_followup": true, "questions": [{"id": "S2_Q1", "hyp": "H2", "kind": "expectation", "type": "tap", "image": {"screen": "Frame_0"}, "text": "Где на экране игры, по-вашему, теперь будет видно это задание? Нажмите на это место."}, {"id": "S2_Q2", "hyp": "H2", "kind": "expectation", "type": "text", "recall": true, "text": "Что, по-вашему, изменилось в игре после вашего действия?"}, {"id": "S2_Q3", "hyp": "H3", "kind": "understanding", "type": "choice", "image": {"screen": "Frame_1"}, "mark": {"x": 811, "y": 343}, "text": "Что показывает отмеченное на картинке число?", "options": ["Сколько любых ежедневных задач уже выполнено", "Прогресс задания, которое под ним", "Сколько наград можно забрать", "Не знаю"]}]}, {"id": "S3", "title": "Узнать награду за ежедневный счётчик", "task": "Узнайте, какую дополнительную награду вы получите, если выполните сегодняшние ежедневные задачи.", "hypotheses": ["H4"], "start": "Frame_1", "success": {"screen": "Frame_1", "overlay": "overlay_Tooltip_1"}, "misclick_followup": true, "questions": [{"id": "S3_Q1", "hyp": "H4", "kind": "understanding", "type": "text", "recall": true, "text": "Что вы получите, когда выполните все сегодняшние ежедневные задачи? Опишите своими словами."}, {"id": "S3_Q2", "hyp": "H4", "kind": "difficulty", "type": "scale", "min": 1, "max": 5, "labels": ["Очень сложно", "Очень легко"], "text": "Насколько легко было это узнать?"}]}], "outro": {"questions": [{"id": "F_Q1", "kind": "difficulty", "type": "scale", "min": 1, "max": 5, "labels": ["Совсем непонятно", "Всё понятно"], "text": "Насколько в целом понятно, как устроены советуемые задания?"}, {"id": "F_Q2", "kind": "difficulty", "type": "text", "optional": true, "text": "Что было самым непонятным?"}, {"id": "F_Q3", "kind": "difficulty", "type": "text", "optional": true, "text": "Что бы вы изменили?"}], "thanks": "Спасибо! Ответы отправлены. Страницу можно закрыть."}, "cheat_ids": []};</script>
 <script>
 /* ===== Оболочка юзер-теста поверх HTML-прототипа =====
    Глобальные имена от движка прототипа: SPEC, A, window.__proto (+ reset, добавлен inject_test.py).
@@ -458,16 +509,29 @@ function env(){
           fullscreen: !!document.fullscreenElement};
 }
 const envStr = e => e.viewport + ' ' + e.orientation + (e.fullscreen ? ' fs' : '');
-let lastEnv = '', envTimer = null;
+/* Смена условий — только во время задания и только устоявшаяся (оператор 12.11.2026, находка 8.4, п. 5):
+   - на вопросах и карточке не пишем: там шумит клавиатура, а условия всё равно снимаются на старте следующего задания;
+   - условия должны не меняться ENV_STABLE_MS, браузер не свёрнут, окна «Развернуть» нет. Сворачивание с возвратом
+     (Samsung Browser: 745×315 fs → hidden → … → 745×267 → 745×360 fs) не даёт ни одного env и не идёт в env_changes —
+     оно видно по hidden / visible / fs_lost / fs_restored; поворот экрана даёт один env;
+   - t — момент первого изменения, а не момент записи. */
+const ENV_STABLE_MS = 1000;
+let lastEnv = '', envTimer = null, envT = null;
+const envMuted = () => document.visibilityState === 'hidden' || fsGate.classList.contains('on');
+function envReset(){ clearTimeout(envTimer); envTimer = null; envT = null; }
 function envChanged(){
   clearTimeout(envTimer);
+  if (!cur || cur.done){ envT = null; return; }
+  if (envT == null) envT = now() - cur.t0;
   envTimer = setTimeout(() => {
+    const t = envT; envReset();
+    if (!cur || cur.done || envMuted()) return;
     const e = env(), k = envStr(e);
     if (k === lastEnv) return;
     lastEnv = k;
-    events.push(Object.assign({type: 'env', scenario: cur ? cur.sc.id : null, t: cur ? now() - cur.t0 : null}, e));
-    if (cur && !cur.done) cur.env_changes++;
-  }, 250);
+    events.push(Object.assign({type: 'env', scenario: cur.sc.id, t}, e));
+    cur.env_changes++;
+  }, ENV_STABLE_MS);
 }
 addEventListener('resize', envChanged);
 document.addEventListener('fullscreenchange', envChanged);
@@ -521,6 +585,71 @@ async function flush(){
 addEventListener('online', flush);
 function showClosed(){ showPanel('<h2>Тест завершён</h2><p class="ut-muted">Сбор ответов закрыт.</p>'); }
 
+/* ---------- Изолированный режим: маска ----------
+   В сценарии включены только элементы из active (+ active_always): ID целиком или шаблон «<префикс>/*».
+   Тап по выключенному элементу гасится до движка и пишется как masked (промах). Область прокрутки, в которой нет
+   ни одного включённого элемента, не листается; попытка — событие masked_scroll (не промах).
+   Закрытие оверлея тапом мимо него не маскируется — иначе респондент может застрять. */
+const ISOLATED = C.mode === 'isolated';
+/* Читы прототипа (служебные кнопки дизайнера, «[CHEAT] …» в Figma): ID оставшихся в сборке читов даёт inject_test.py.
+   Тап по читу работает как обычно, пишется как kind = cheat; если чит нажат до выполнения задания — результат wrong_path. */
+const CHEATS = new Set(C.cheat_ids || []);
+const MISS = {dead: true, overlay_dead: true, masked: true};   // промахи (offpath — не промах)
+const maskAllows = (pats, id) => pats.some(p => id === p || (p.slice(-2) === '/*' && id.indexOf(p.slice(0, -1)) === 0));
+/* ID областей прокрутки — в порядке, в котором движок строит DOM (экран: области вглубь, потом оверлеи).
+   Сверяется с DOM: число областей и ID хотспотов внутри; не сошлось — прокрутку не блокируем (маска тапов работает). */
+const scrollAreas = (() => {
+  const ids = [];
+  const walk = (node, pre) => (node.scrolls || []).forEach(S => { const id = pre + '/' + S.id; ids.push(id); walk(S, id); });
+  Object.entries(SPEC.screens).forEach(([sid, S]) => { walk(S, sid); Object.entries(S.overlays || {}).forEach(([oid, O]) => walk(O, sid + '/' + oid)); });
+  const els = Array.from(document.querySelectorAll('#stage .scroll'));
+  if (els.length !== ids.length) return [];
+  const pairs = els.map((el, i) => ({el, id: ids[i]}));
+  return pairs.every(a => Array.from(a.el.querySelectorAll('.hit[data-hs]')).every(h => h.dataset.hs.indexOf(a.id + '/') === 0)) ? pairs : [];
+})();
+function applyMask(pats){
+  document.querySelectorAll('#stage .hit[data-hs]').forEach(h => h.classList.toggle('ut-off', !!pats && !maskAllows(pats, h.dataset.hs)));
+  scrollAreas.forEach(a => {
+    const on = !pats || maskAllows(pats, a.id) || pats.some(p => (p.slice(-2) === '/*' ? p.slice(0, -1) : p + '/').indexOf(a.id + '/') === 0);
+    a.el.classList.toggle('ut-lock', !on); a.el.dataset.utArea = a.id;
+  });
+}
+/* Зоны «путь вне прототипа» (C.zones, размечаются при подготовке теста): место, которое в игре ведёт к цели, а в прототипе
+   не работает (нерабочая плитка «Кланы»). Проверяются только тапы, которые иначе были бы промахом (dead, overlay_dead,
+   masked); работающая кнопка важнее зоны. В задании, где зона — верный путь (sc.offpath), тап — kind = offpath (не промах,
+   без вопроса по промаху; вопрос — только если задан sc.offpath_question); в остальных — промах с target = ID зоны.
+   rect — в координатах экрана; у зоны в области прокрутки (scroll) — в координатах её содержимого. */
+const ZONES = C.zones || {};
+function zoneAt(x, y, sx, sy, scEl){
+  for (const id of Object.keys(ZONES)){
+    const z = ZONES[id];
+    if (z.screen !== P.screen || (z.overlay && z.overlay !== P.overlay)) continue;
+    let px = x, py = y;
+    if (z.scroll){
+      const a = scEl && scrollAreas.find(p => p.el === scEl);
+      if (!a || a.id !== z.scroll) continue;
+      px = sx; py = sy;
+    }
+    const r = z.rect;
+    if (px >= r[0] && px < r[0] + r[2] && py >= r[1] && py < r[1] + r[3]) return id;
+  }
+  return null;
+}
+/* Попытка прокрутить заблокированную область: одно событие на жест (сдвиг пальца больше 12 px). */
+let gesture = null;
+document.addEventListener('pointerdown', e => {
+  const a = cur && !cur.done && e.target.closest && e.target.closest('#stage .scroll.ut-lock');
+  gesture = a ? {area: a.dataset.utArea, x: e.clientX, y: e.clientY, logged: false} : null;
+}, true);
+document.addEventListener('pointermove', e => {
+  if (!gesture || gesture.logged || !cur || cur.done) return;
+  if (Math.abs(e.clientX - gesture.x) + Math.abs(e.clientY - gesture.y) < 12) return;
+  gesture.logged = true; cur.masked_scrolls++;
+  events.push({type: 'masked_scroll', scenario: cur.sc.id, t: now() - cur.t0, screen: P.screen, overlay: P.overlay, kind: 'masked_scroll', target: gesture.area});
+}, true);
+let dragEnd = 0;   // клик, которым заканчивается такой жест (мышь), — не тап
+document.addEventListener('pointerup', () => { if (gesture && gesture.logged) dragEnd = now(); gesture = null; }, true);
+
 /* ---------- Логирование тапов ---------- */
 let cur = null;          // текущий сценарий: {sc, idx, t0, taps, visited, done, result}
 const now = () => Math.round(performance.now());
@@ -528,23 +657,51 @@ function stageXY(cx, cy){
   const r = stageEl.getBoundingClientRect(), s = r.width / W;
   return {x: Math.round((cx - r.left) / s), y: Math.round((cy - r.top) / s), s};
 }
+/* Итог тапа — после анимаций движка (P2, найдено 10.11.2026): оригинал html-prototype анимирует закрытие оверлея (exit)
+   и убирает его из стека только в onfinish, событий не шлёт; сразу после тапа оверлей ещё числится открытым.
+   Ждём конечные анимации в сцене (не дольше SETTLE_MAX), затем кадр (onfinish движка) и только потом смотрим результат.
+   Работает с любым движком; в форке закрытие мгновенное — ждать нечего. */
+const SETTLE_MAX = 1000;
+const stageAnims = () => document.getAnimations ? document.getAnimations().filter(a => {
+  const t = a.effect && a.effect.target;
+  return a.playState === 'running' && t && stageEl.contains(t) && a.effect.getComputedTiming().endTime !== Infinity;
+}) : [];
+function afterSettle(fn){
+  setTimeout(() => {
+    const an = stageAnims();
+    if (!an.length){ fn(); return; }
+    Promise.race([Promise.all(an.map(a => a.finished.catch(() => {}))), new Promise(r => setTimeout(r, SETTLE_MAX))])
+      .then(() => requestAnimationFrame(() => setTimeout(fn, 0)));
+  }, 0);
+}
 document.getElementById('viewport').addEventListener('click', e => {
   if (!cur || cur.done || !stageEl.contains(e.target)) return;
+  if (e.target.closest('.ut-tb')) return;            // кнопка теста из макета — не тап в прототипе
+  if (dragEnd && now() - dragEnd < 400){ dragEnd = 0; return; }
   const {x, y, s} = stageXY(e.clientX, e.clientY);
   let kind = 'dead', target = null, sx = null, sy = null;
   const hit = e.target.closest('.hit');
-  if (hit && hit.dataset.hs){ kind = 'hotspot'; target = hit.dataset.hs; }
+  if (hit && hit.dataset.hs){
+    kind = 'hotspot'; target = hit.dataset.hs;
+    if (cur.mask && !maskAllows(cur.mask, target)){ kind = 'masked'; e.preventDefault(); e.stopPropagation(); }   // движок о тапе не узнаёт
+    else if (CHEATS.has(target)) kind = 'cheat';
+  }
   else if (hit || e.target.closest('.pane')){ kind = 'overlay_dead'; target = P.overlay; }   // пустое место внутри оверлея (в т.ч. в его прокрутке)
   else if (e.target.closest('.scrim')){ kind = 'outside_overlay'; target = P.overlay; }       // тап мимо оверлея — закрытие, не промах
   const sc = e.target.closest('.scroll');
   if (sc){ const cr = sc.querySelector('.content').getBoundingClientRect(); sx = Math.round((e.clientX - cr.left) / s); sy = Math.round((e.clientY - cr.top) / s); }
+  if (MISS[kind]){                                     // путь вне прототипа: только вместо промаха
+    const z = zoneAt(x, y, sx, sy, sc);
+    if (z && (cur.sc.offpath || []).indexOf(z) >= 0){ kind = 'offpath'; target = z; }
+    else if (z && kind !== 'masked') target = z;       // промах с названием места; у masked остаётся ID выключенной кнопки
+  }
   const t = now() - cur.t0;
   const prev = cur.taps[cur.taps.length - 1];
   const dup = !!prev && t - prev.t < 350 && Math.abs(prev.x - x) < 40 && Math.abs(prev.y - y) < 40;
   const ev = {type: 'tap', scenario: cur.sc.id, n: cur.taps.length + 1, t, screen: P.screen, overlay: P.overlay,
               x, y, sx, sy, kind, target, dup, after_screen: null, after_overlay: null};
   cur.taps.push(ev); events.push(ev);
-  setTimeout(() => { ev.after_screen = P.screen; ev.after_overlay = P.overlay; checkSuccess(); }, 0);
+  afterSettle(() => { ev.after_screen = P.screen; ev.after_overlay = P.overlay; checkSuccess({t, n: ev.n}); tbRender(); });
 }, true);
 
 window.__ut = {
@@ -557,7 +714,7 @@ document.addEventListener('proto:go', e => {
   if (!cur || cur.done) return;
   events.push({type: 'nav', scenario: cur.sc.id, t: now() - cur.t0, screen: sid});
   if (cur.visited[cur.visited.length - 1] !== sid) cur.visited.push(sid);
-  setTimeout(checkSuccess, 0);
+  setTimeout(() => { checkSuccess(); tbRender(); }, 0);
 });
 
 /* ---------- Критерий успеха ---------- */
@@ -570,47 +727,247 @@ function successMet(cond){
   if (cond.state_any && !Object.entries(cond.state_any).some(([k, v]) => st[k] == v)) return false;
   return true;
 }
-/* Цель — экран/оверлей из критерия (без учёта переменных). Нужна для метрик «первое попадание» и «дошёл, но ушёл». */
+/* Цель — экран/оверлей из критерия (без учёта переменных). Нужна для метрик «первое попадание» и «дошёл, но ушёл».
+   Если цель уже на старте задания (c.hit.na), метрики пустые: target_visits = null отличает «н/п» от «не дошёл» (0). */
 function atTarget(cond){
   if (!cond || (!cond.screen && !cond.overlay)) return false;
   if (cond.screen && P.screen !== cond.screen) return false;
   if (cond.overlay && P.overlay !== cond.overlay) return false;
   return true;
 }
-function trackTarget(c){
+function trackTarget(c, tap){
+  if (c.hit.na) return;
   const at = atTarget(c.sc.success), h = c.hit;
   if (at && !h.at){
     h.visits++;
-    if (h.first_tap == null){ h.first_tap = c.taps.filter(e => !e.dup).length; h.first_ms = now() - c.t0; }
+    if (h.first_tap == null){
+      const taps = tap ? c.taps.slice(0, tap.n) : c.taps;
+      h.first_tap = taps.filter(e => !e.dup).length; h.first_ms = tap ? tap.t : now() - c.t0;
+    }
   }
   if (!at && h.at) h.left = true;
   h.at = at;
 }
 /* via — хотспоты, которые обязательно нажать по пути (любой порядок). */
 const viaMissing = c => ((c.sc.success && c.sc.success.via) || []).filter(id => !c.taps.some(e => e.target === id));
-function checkSuccess(){
-  if (!cur || cur.done) return;
-  trackTarget(cur);
+const cheatUsed = c => c.taps.some(e => e.kind === 'cheat');
+/* Как завершается сценарий: auto — сразу при выполнении критерия; done — респондент сам нажимает «Готово»
+   (смотрит результат сколько угодно, как в игре). По умолчанию done, если цель — оверлей (подсказка, окно награды). */
+const finishMode = sc => sc.finish || (sc.success && sc.success.overlay ? 'done' : 'auto');
+/* tap — {t, n}: проверка по итогу тапа (после анимаций); время и число тапов — на момент самого тапа. */
+function checkSuccess(tap){
+  if (!cur || cur.done || cur.reached) return;
+  trackTarget(cur, tap);
   if (!successMet(cur.sc.success)) return;
-  finishScenario(viaMissing(cur).length ? 'wrong_path' : 'success');
+  const result = viaMissing(cur).length || cheatUsed(cur) ? 'wrong_path' : 'success';
+  if (cur.finish === 'done') reachScenario(result, tap); else autoReach(result, tap);
+}
+/* finish: auto — задание засчитано: метрики фиксируются, прототип блокируется (экран результата остаётся на месте),
+   плашка «Задание завершено» 2 с, затем на её месте кнопка «К вопросам»; вопросы — только по нажатию
+   (оператор 11.11.2026: раньше вопросы открывались сами через ~1 с, респондент не успевал понять, что задание выполнено).
+   Текст плашки нейтральный: она же показывается при wrong_path. scenario_end и done_ms — по нажатию кнопки. */
+function autoReach(result, tap){
+  const c = cur; markReached(result, tap);
+  c.wait = true; pill.classList.remove('on'); sheet.classList.remove('on'); block.classList.add('on'); tbRender();
+  afterQuiet(c, () => {
+    toast.textContent = 'Задание завершено'; toast.classList.add('on');
+    setTimeout(() => { toast.classList.remove('on'); if (cur === c && c.wait) toQ.classList.add('on'); }, 2000);
+  });
+}
+/* Плашка оболочки — не сразу (оператор 11.11.2026): прототип часто сам отвечает на действие — уведомление игры,
+   анимация оверлея; плашка поверх них сбивает. Ждём, пока в прототипе всё закончится (нет идущих анимаций
+   и видимых временных уведомлений), и ещё QUIET_MS. Постоянные уведомления (holdMs: null) и бесконечные анимации
+   не ждём; на всякий случай — не дольше QUIET_MAX от выполнения. */
+const QUIET_MS = 1500, QUIET_MAX = 8000;
+function protoBusy(){
+  if (stageAnims().length) return true;
+  const E = (SPEC.screens[P.screen] || {}).effects || {};
+  return typeof P.effectVisible === 'function' && Object.keys(E).some(id => E[id].holdMs !== null && !E[id].persist && P.effectVisible(id));
+}
+function afterQuiet(c, fn, alive){
+  alive = alive || (() => c.wait);
+  const t0 = now(); let last = t0;
+  const tick = () => {
+    if (cur !== c || !alive()) return;
+    const t = now(); if (protoBusy()) last = t;
+    if (t - last >= QUIET_MS || t - t0 >= QUIET_MAX) fn(); else setTimeout(tick, 100);
+  };
+  setTimeout(tick, 100);
+}
+/* finish: done — задание выполнено: метрики фиксируются на этот момент, прототип остаётся, появляется «Готово». */
+function markReached(result, tap){
+  const c = cur;
+  c.reached = {result, t: tap ? tap.t : now() - c.t0, n: tap ? tap.n : c.taps.length, via_missing: viaMissing(c).join(', ')};
+  events.push({type: 'reached', scenario: c.sc.id, t: c.reached.t, screen: P.screen, overlay: P.overlay, result});
+}
+/* finish: done — «Готово» тоже не сразу (оператор 11.11.2026): по тому же правилу, что плашка у auto, — когда в прототипе
+   всё закончится, и ещё QUIET_MS. Прототип при этом не блокируется: респондент смотрит результат. */
+function reachScenario(result, tap){
+  const c = cur; markReached(result, tap);
+  afterQuiet(c, () => { c.doneReady = true; doneBtn.classList.add('on'); tbRender(); }, () => !c.done);
 }
 
 /* ---------- UI ---------- */
 const root = document.createElement('div'); root.id = 'ut'; document.body.appendChild(root);
 const panel = document.createElement('div'); panel.id = 'ut-panel'; root.appendChild(panel);
-const pill = document.createElement('button'); pill.id = 'ut-pill'; pill.type = 'button'; pill.textContent = 'Задание'; root.appendChild(pill);
+const bar = document.createElement('div'); bar.id = 'ut-bar'; root.appendChild(bar);
+const pill = document.createElement('button'); pill.id = 'ut-pill'; pill.type = 'button'; pill.textContent = 'Задание'; bar.appendChild(pill);
+const doneBtn = document.createElement('button'); doneBtn.id = 'ut-done'; doneBtn.type = 'button'; doneBtn.textContent = 'Готово'; bar.appendChild(doneBtn);
 const sheet = document.createElement('div'); sheet.id = 'ut-sheet'; root.appendChild(sheet);
 const toast = document.createElement('div'); toast.id = 'ut-toast'; root.appendChild(toast);
 const zoom = document.createElement('div'); zoom.id = 'ut-zoom'; root.appendChild(zoom);
-zoom.addEventListener('click', () => zoom.classList.remove('on'));
+const block = document.createElement('div'); block.id = 'ut-block'; root.appendChild(block);   // прототип заблокирован (finish: auto, пауза до «К вопросам»)
+const toQ = document.createElement('button'); toQ.id = 'ut-toq'; toQ.type = 'button'; toQ.className = 'ut-main'; toQ.textContent = 'К вопросам'; root.appendChild(toQ);
+toQ.onclick = () => { if (cur && cur.wait && !cur.done){ cur.wait = false; toQ.classList.remove('on'); block.classList.remove('on'); finishScenario(cur.reached.result); } };
+root.style.setProperty('--ut-ar', String(W / H));
+
+/* Окно «Развернуть на весь экран»: полноэкранный режим потерян на любом шаге теста (браузер свернули и открыли снова,
+   «Назад») — затемнение и одна кнопка. Вернуть режим можно только по тапу (жест пользователя). Показываем при каждой
+   потере, только от «Начать» до конца теста и только где режим вообще есть (сенсорный экран + requestFullscreen;
+   на iPhone API нет — окна нет). Браузер отказал — окно убираем, чтобы не запереть респондента.
+   Время задания не меняется; в лог — hidden / visible (браузер свёрнут / открыт), fs_lost, fs_restored. */
+const fsGate = document.createElement('div'); fsGate.id = 'ut-fsgate';
+fsGate.innerHTML = '<button type="button" class="ut-main" id="ut-fsgo">Развернуть на весь экран</button>';
+root.appendChild(fsGate);
+let testOn = false;                                     // от «Начать» до конца теста
+const fsAvail = () => matchMedia('(pointer:coarse)').matches && typeof document.documentElement.requestFullscreen === 'function';
+const lifeEv = type => events.push({type, scenario: cur ? cur.sc.id : null, t: cur ? now() - cur.t0 : null});
+function fsCheck(){
+  if (document.fullscreenElement || !testOn || !fsAvail()){ fsGate.classList.remove('on'); return; }
+  if (document.visibilityState === 'hidden' || fsGate.classList.contains('on')) return;
+  const a = document.activeElement;
+  if (a && /^(TEXTAREA|INPUT)$/.test(a.tagName)) a.blur();   // клавиатуру — закрыть, иначе она над окном
+  fsGate.classList.add('on'); envReset();
+}
+document.addEventListener('fullscreenchange', () => { if (testOn && !document.fullscreenElement && fsAvail()) lifeEv('fs_lost'); fsCheck(); });
+document.addEventListener('visibilitychange', () => {
+  if (testOn) lifeEv(document.visibilityState === 'hidden' ? 'hidden' : 'visible');
+  if (document.visibilityState === 'hidden') envReset(); else envChanged();   // сжатие экрана перед сворачиванием — не смена условий
+  fsCheck();
+});
+document.getElementById('ut-fsgo').onclick = async e => {
+  e.stopPropagation();
+  await ensureFullscreen();
+  if (document.fullscreenElement) lifeEv('fs_restored');
+  fsGate.classList.remove('on');
+  envChanged();                                         // окно убрано: условия — заново, после того как устоятся
+};
+
+/* ---------- Кнопки теста из макета («[TEST] …» в Figma → SPEC.testButtons) ----------
+   Роли: task — «Задание», done — «Готово» (видна только после выполнения), skip — «Не получается» (до выполнения,
+   с подтверждением). Нарисованная кнопка заменяет кнопку оболочки своей роли; не нарисованные — по умолчанию.
+   Кнопка с screens (своё место на экране) важнее общей; notScreens и visibleWhen — условия из аннотаций.
+   Лежат поверх прототипа и оверлеев; тапы по ним — не тапы в прототипе; маска на них не действует. */
+const TB = (SPEC.testButtons || []).filter(b => ({task: 1, done: 1, skip: 1})[b.role]);
+const TB_ROLES = new Set(TB.map(b => b.role));
+TB_ROLES.forEach(r => html.classList.add('ut-tb-' + r));
+const TB_OPS = {eq: (a, b) => a == b, ne: (a, b) => a != b, gt: (a, b) => +a > +b, gte: (a, b) => +a >= +b, lt: (a, b) => +a < +b, lte: (a, b) => +a <= +b};
+const tbTest = (v, x) => x !== null && typeof x === 'object' && !Array.isArray(x)
+  ? Object.entries(x).every(([op, b]) => TB_OPS[op] ? TB_OPS[op](v, b) : false)
+  : (Array.isArray(x) ? x : [x]).some(e => e == v);
+const tbMatch = (cond, st) => Object.entries(cond).every(([k, x]) => tbTest(st[k], x));
+TB.forEach(b => {
+  const el = document.createElement('div'); el.className = 'ut-tb'; el.dataset.role = b.role;
+  Object.assign(el.style, {left: b.x + 'px', top: b.y + 'px', width: b.w + 'px', height: b.h + 'px'});
+  const img = document.createElement('img'); img.alt = ''; img.src = A[b.src]; el.appendChild(img);
+  el.addEventListener('click', e => { e.stopPropagation(); tbClick(b.role); });
+  stageEl.appendChild(el); b.el = el;
+});
+function tbPick(role){
+  const scr = P.screen, st = P.state;
+  const ok = TB.filter(b => b.role === role && (!b.screens || b.screens.indexOf(scr) >= 0) && (!b.notScreens || b.notScreens.indexOf(scr) < 0)
+                         && (!b.visibleWhen || tbMatch(b.visibleWhen, st)));
+  return ok.find(b => b.screens) || ok[0] || null;
+}
+function tbRender(){
+  if (!TB.length) return;
+  const live = !!cur && !cur.done && !cur.wait && !html.classList.contains('ut-panel');
+  const want = {task: live, skip: live && !cur.reached, done: live && !!cur.reached && !!cur.doneReady};
+  const pick = {}; TB_ROLES.forEach(r => { pick[r] = want[r] ? tbPick(r) : null; });
+  TB.forEach(b => {
+    const on = pick[b.role] === b;
+    if (on && b.role === 'done' && !b.el.classList.contains('on')) { b.el.classList.remove('pop'); void b.el.offsetWidth; b.el.classList.add('pop'); }
+    b.el.classList.toggle('on', on);
+  });
+}
+setInterval(() => { if (cur && !cur.done) tbRender(); }, 300);   // состояние меняют и таймеры прототипа
+function tbClick(role){
+  if (!cur || cur.done) return;
+  if (role === 'task') pill.onclick();
+  else if (role === 'done') doneBtn.onclick();
+  else if (role === 'skip' && !cur.reached){
+    sheet.innerHTML = '<p class="ut-task">Перейти к следующему заданию? Это задание будет засчитано как невыполненное.</p>' +
+      '<div class="ut-row"><button class="ut-main" id="ut-stay">Остаться</button><button class="ut-alt" id="ut-skip-yes">Да, дальше</button></div>';
+    sheet.classList.add('on');
+    document.getElementById('ut-stay').onclick = () => sheet.classList.remove('on');
+    document.getElementById('ut-skip-yes').onclick = () => { sheet.classList.remove('on'); finishScenario('gave_up'); };
+  }
+}
+zoom.addEventListener('click', e => { if (e.target === zoom || e.target.classList.contains('ut-zwrap')) closeZoom(); });
+/* Подсказка по центру экрана (неактивная кнопка и т. п.): исчезает сама через ~2 с. */
+const hintEl = document.createElement('div'); hintEl.id = 'ut-hint'; hintEl.setAttribute('role', 'status'); root.appendChild(hintEl);
+let hintTimer = 0;
+function hint(text){
+  hintEl.textContent = text; hintEl.classList.remove('on'); void hintEl.offsetWidth; hintEl.classList.add('on');
+  clearTimeout(hintTimer); hintTimer = setTimeout(() => hintEl.classList.remove('on'), 2200);
+}
+function closeZoom(){ zoom.classList.remove('on', 'big'); zoom.innerHTML = ''; }
 
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
 const para = s => esc(s).split('\n').map(l => l.trim() ? '<p>' + l + '</p>' : '').join('');
 function showPanel(htmlStr){
   panel.innerHTML = '<div class="ut-card">' + htmlStr + '</div>';
-  panel.scrollTop = 0; html.classList.add('ut-panel'); pill.classList.remove('on'); sheet.classList.remove('on');
+  panel.scrollTop = 0; html.classList.add('ut-panel'); pill.classList.remove('on'); doneBtn.classList.remove('on'); sheet.classList.remove('on');
+  moreSeen = false; if (sbRO) { sbRO.disconnect(); sbRO.observe(panel.firstChild); }
+  panel.querySelectorAll('img').forEach(i => i.addEventListener('load', sbUpdate));
+  sbUpdate(); requestAnimationFrame(sbUpdate);
+  tbRender();
 }
-function hidePanel(){ html.classList.remove('ut-panel'); panel.innerHTML = ''; }
+function hidePanel(){ html.classList.remove('ut-panel'); panel.innerHTML = ''; sbUpdate(); tbRender(); }
+
+/* Подсказка прокрутки (оператор 11.11.2026): в горизонтальной ориентации вопрос и картинка занимают весь экран,
+   поле ответа ниже — респондент может не понять, что нужно прокрутить. Системная полоска на телефоне видна только
+   во время прокрутки, поэтому своя: дорожка с ползунком у правого края, пока содержимое не помещается; и маленький
+   кружок со стрелкой внизу по центру — пропадает после первой прокрутки (тап по нему прокручивает вниз). */
+const sb = document.createElement('div'); sb.id = 'ut-sb'; sb.appendChild(document.createElement('i')); root.appendChild(sb);
+const more = document.createElement('button'); more.id = 'ut-more'; more.type = 'button'; more.setAttribute('aria-label', 'Ниже есть ещё');
+more.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6l4.5 4.5L12.5 6"/></svg>';
+root.appendChild(more);
+let moreSeen = false;
+const sbRO = window.ResizeObserver ? new ResizeObserver(() => sbUpdate()) : null;
+function sbUpdate(){
+  const ch = panel.clientHeight, sh = panel.scrollHeight;
+  const over = html.classList.contains('ut-panel') && sh > ch + 4;
+  sb.classList.toggle('on', over);
+  if (panel.scrollTop > 8) moreSeen = true;
+  more.classList.toggle('on', over && !moreSeen);
+  if (!over) return;
+  const r = panel.getBoundingClientRect(), pad = 6, track = r.height - 2 * pad;
+  const th = Math.max(28, Math.round(track * ch / sh));
+  const top = pad + Math.round((track - th) * Math.min(1, panel.scrollTop / (sh - ch)));
+  sb.style.top = r.top + 'px'; sb.style.height = r.height + 'px';
+  sb.firstChild.style.height = th + 'px'; sb.firstChild.style.transform = 'translateY(' + top + 'px)';
+  more.style.bottom = Math.max(10, Math.round(innerHeight - r.bottom) + 10) + 'px';
+}
+panel.addEventListener('scroll', sbUpdate, {passive: true});
+window.addEventListener('resize', sbUpdate);
+more.addEventListener('click', () => panel.scrollBy({top: Math.round(panel.clientHeight * 0.7), behavior: 'smooth'}));
+
+/* Экранная клавиатура. В полноэкранном режиме Android она ложится поверх страницы, высота окна не меняется —
+   поле ввода внизу панели оказывается под клавиатурой, и прокрутить его выше нельзя (пилот 10.11.2026).
+   Видимую область сообщает visualViewport: панель ужимается до неё, поле ввода — в центр видимой части. */
+const vv = window.visualViewport;
+function fitKeyboard(){
+  if (!vv) return;
+  const kb = Math.max(0, Math.round(innerHeight - vv.height - vv.offsetTop));
+  panel.style.bottom = kb > 40 ? kb + 'px' : '';
+  html.classList.toggle('ut-kb', kb > 40);
+  const a = document.activeElement;
+  if (kb > 40 && a && panel.contains(a) && /^(TEXTAREA|INPUT)$/.test(a.tagName)) a.scrollIntoView({block: 'center'});
+  sbUpdate();
+}
+if (vv){ vv.addEventListener('resize', fitKeyboard); vv.addEventListener('scroll', fitKeyboard); }
+panel.addEventListener('focusin', e => { if (/^(TEXTAREA|INPUT)$/.test(e.target.tagName)) setTimeout(fitKeyboard, 300); });
 
 /* Картинка экрана: фон + (необязательно) оверлей. Возвращает элемент-«кадр» в координатах сцены. */
 function frame(img, markers){
@@ -634,6 +991,43 @@ function addMarker(f, x, y, cls){
   const m = document.createElement('i'); m.className = 'ut-mark' + (cls ? ' ' + cls : '');
   m.style.left = (x / W * 100) + '%'; m.style.top = (y / H * 100) + '%'; f.appendChild(m); return m;
 }
+/* Картинка на весь экран; тап по ней — увеличение ×2.5 вокруг точки тапа (прокрутка пальцем), ещё тап — обратно.
+   Закрыть — ✕ или тап по тёмному фону. */
+function openZoom(img, markers){
+  zoom.innerHTML = '<div class="ut-zwrap"></div><button class="ut-zx" type="button" aria-label="Закрыть">✕</button>' +
+    '<div class="ut-zhint">Нажмите на картинку, чтобы увеличить</div>';
+  const wrap = zoom.querySelector('.ut-zwrap'), f = frame(img, markers);
+  wrap.appendChild(f);
+  f.addEventListener('click', e => {
+    const r = f.getBoundingClientRect(), fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
+    if (zoom.classList.toggle('big')){
+      wrap.scrollLeft = fx * f.offsetWidth - wrap.clientWidth / 2;
+      wrap.scrollTop = fy * f.offsetHeight - wrap.clientHeight / 2;
+    }
+  });
+  zoom.querySelector('.ut-zx').onclick = closeZoom;
+  zoom.classList.add('on');
+}
+/* Картинка вопроса, которую можно открыть на весь экран. */
+function zoomableFrame(img, markers, onOpen){
+  const f = frame(img, markers); f.classList.add('zoomable');
+  f.addEventListener('click', () => { openZoom(img, markers); if (onOpen) onOpen(); });
+  return f;
+}
+
+/* Полноэкранный режим — по жесту пользователя («Начать», «Начать задание»): в Samsung Browser режим теряется после
+   клавиатуры и сам не возвращается. Только сенсорные экраны и только где есть API: на iPhone requestFullscreen нет —
+   ничего не делаем и не ждём. Режим уже включён — ничего не делаем. Ждём не дольше FS_WAIT_MS, ошибки молча пропускаем. */
+const FS_WAIT_MS = 1000;
+const fsWait = pr => Promise.race([pr, new Promise(res => setTimeout(res, FS_WAIT_MS))]);
+async function ensureFullscreen(){
+  try {
+    const r = document.documentElement;
+    if (!matchMedia('(pointer:coarse)').matches || typeof r.requestFullscreen !== 'function' || document.fullscreenElement) return;
+    await fsWait(r.requestFullscreen({navigationUI: 'hide'}));
+    try { if (screen.orientation && screen.orientation.lock) await fsWait(screen.orientation.lock(W >= H ? 'landscape' : 'portrait')); } catch (e) {}
+  } catch (e) {}
+}
 
 /* ---------- Шаги ---------- */
 function start(){
@@ -641,13 +1035,13 @@ function start(){
   showPanel('<h1>' + esc(it.title || 'Тест') + '</h1>' + para(it.text || '') +
     (it.ask_name ? '<label class="ut-lbl">Ваше имя или ник в Slack<input id="ut-name" autocomplete="off"></label>' : '') +
     '<button class="ut-main" id="ut-go">Начать</button>');
-  document.getElementById('ut-go').onclick = async () => {
+  const goBtn = document.getElementById('ut-go'), nm = document.getElementById('ut-name');
+  if (nm){ const upd = () => goBtn.classList.toggle('ut-off', !nm.value.trim()); nm.addEventListener('input', () => { nm.classList.remove('err'); upd(); }); upd(); }
+  goBtn.onclick = async () => {
     const n = document.getElementById('ut-name');
-    if (n){ if (!n.value.trim()){ n.focus(); n.classList.add('err'); return; } session.respondent = n.value.trim(); }
-    try {
-      const r = document.documentElement;
-      if (matchMedia('(pointer:coarse)').matches && r.requestFullscreen){ await r.requestFullscreen({navigationUI: 'hide'}); try { await screen.orientation.lock(W >= H ? 'landscape' : 'portrait'); } catch (e) {} }
-    } catch (e) {}
+    if (n){ if (!n.value.trim()){ n.classList.add('err'); hint('Сначала введите имя или ник'); return; } session.respondent = n.value.trim(); }
+    await ensureFullscreen();
+    testOn = true;
     session.env = env(); lastEnv = envStr(session.env);
     enqueue('start', {}).then(() => { if (sendState.closed) showClosed(); });   // приёмник закрыл тест раньше close_at в HTML
     taskCard(0);
@@ -658,65 +1052,103 @@ function taskCard(idx){
   const sc = C.scenarios[idx];
   showPanel('<div class="ut-step">Задание ' + (idx + 1) + ' из ' + C.scenarios.length + '</div>' +
     '<h2>' + esc(sc.task) + '</h2>' +
-    '<p class="ut-muted">Когда нажмёте «Начать задание», откроется прототип. Текст задания можно снова посмотреть по кнопке «Задание» вверху экрана.</p>' +
+    '<p class="ut-muted">Когда нажмёте «Начать задание», откроется прототип. Текст задания можно снова посмотреть по кнопке «Задание»' + (TB_ROLES.has('task') ? '' : ' вверху экрана') + '.</p>' +
+    (finishMode(sc) === 'done' ? '<p class="ut-muted">Когда задание будет выполнено, ' + (TB_ROLES.has('done') ? '' : 'вверху ') + 'появится кнопка «Готово». Не торопитесь: нажмите её, когда закончите.</p>' : '') +
     '<button class="ut-main" id="ut-run">Начать задание</button>');
-  document.getElementById('ut-run').onclick = () => runScenario(idx);
+  const runBtn = document.getElementById('ut-run');
+  runBtn.onclick = async () => {
+    if (runBtn.dataset.busy) return;                   // двойной тап, пока браузер включает полноэкранный режим
+    runBtn.dataset.busy = '1';
+    await ensureFullscreen();                          // время задания — после входа в режим, прототип — под новый размер
+    runScenario(idx);
+  };
 }
 
 function runScenario(idx){
   const sc = C.scenarios[idx];
   P.reset(sc.start || SPEC.start);
   cur = {sc, idx, t0: now(), taps: [], visited: [P.screen], done: false, result: null, env_changes: 0,
-         hit: {first_tap: null, first_ms: null, visits: 0, at: false, left: false}};
+         finish: finishMode(sc), reached: null, masked_scrolls: 0,
+         mask: ISOLATED ? (sc.active || []).concat(C.active_always || []) : null,
+         hit: {first_tap: null, first_ms: null, visits: 0, at: false, left: false, na: false}};
+  // экран/оверлей цели — уже на старте (цель — переменные на стартовом экране): «первое попадание» и «дошёл, но ушёл»
+  // не имеют смысла — пишем пустыми (оператор 12.11.2026, находка 8.5, п. 3)
+  cur.hit.na = atTarget(sc.success);
+  applyMask(cur.mask);
   events.push({type: 'scenario_start', scenario: sc.id, t: 0, screen: P.screen});
+  // условия на старте задания (например, полноэкранный режим только что вернули по «Начать задание»): в лог с t = 0,
+  // но не в env_changes — это не смена условий во время задания
+  envReset();
+  const e0 = env(), k0 = envStr(e0);
+  if (k0 !== lastEnv){ lastEnv = k0; events.push(Object.assign({type: 'env', scenario: sc.id, t: 0}, e0)); }
   hidePanel(); pill.classList.add('on');
-  checkSuccess();
+  checkSuccess(); tbRender();
 }
 
 pill.onclick = () => {
   if (!cur || cur.done) return;
+  const r = cur.reached && cur.doneReady ? cur.reached : null;   // задание выполнено (finish: done) и «Готово» уже показана — вместо «Не получается» кнопка «Готово»
   sheet.innerHTML = '<div class="ut-step">Задание ' + (cur.idx + 1) + ' из ' + C.scenarios.length + '</div><p class="ut-task">' + esc(cur.sc.task) + '</p>' +
-    '<div class="ut-row"><button class="ut-main" id="ut-cont">Продолжить</button><button class="ut-alt" id="ut-give">Не получается — дальше</button></div>';
+    '<div class="ut-row"><button class="ut-main" id="ut-cont">Продолжить</button>' +
+    (r ? '<button class="ut-alt" id="ut-sheet-done">Готово</button>' : cur.reached ? '' : '<button class="ut-alt" id="ut-give">Не получается — дальше</button>') + '</div>';
   sheet.classList.add('on');
   events.push({type: 'task_reopen', scenario: cur.sc.id, t: now() - cur.t0});
   document.getElementById('ut-cont').onclick = () => sheet.classList.remove('on');
-  document.getElementById('ut-give').onclick = () => { sheet.classList.remove('on'); finishScenario('gave_up'); };
+  if (r) document.getElementById('ut-sheet-done').onclick = () => { sheet.classList.remove('on'); finishScenario(r.result); };
+  else if (!cur.reached) document.getElementById('ut-give').onclick = () => { sheet.classList.remove('on'); finishScenario('gave_up'); };
 };
+doneBtn.onclick = () => { if (cur && !cur.done && !cur.wait && cur.reached && cur.doneReady){ sheet.classList.remove('on'); finishScenario(cur.reached.result); } };
 
+/* Промах: пустое место, пустое место в оверлее, выключенный маской элемент. */
+/* Сводка сценария. При finish: done метрики (время, тапы, промахи, путь мимо via) — на момент выполнения задания,
+   как у auto; время до «Готово» и тапы после выполнения — отдельно (done_ms, after_taps). */
 function finishScenario(result){
   const c = cur; c.done = true; c.result = result;
-  const t = now() - c.t0;
+  const t = now() - c.t0, r = c.reached;
   events.push({type: 'scenario_end', scenario: c.sc.id, t, screen: P.screen, result});
-  const real = c.taps.filter(e => !e.dup);
-  const dead = real.filter(e => e.kind === 'dead' || e.kind === 'overlay_dead');
+  c.counted = r ? c.taps.slice(0, r.n) : c.taps;
+  const real = c.counted.filter(e => !e.dup);
+  const dead = real.filter(e => MISS[e.kind]);
+  const masked = real.filter(e => e.kind === 'masked');
+  const cheats = real.filter(e => e.kind === 'cheat');
+  const offp = real.filter(e => e.kind === 'offpath');
   const first = real[0];
   c.summary = {
-    scenario: c.sc.id, result, time_ms: t,
-    taps: real.length, dead_taps: dead.length, dup_taps: c.taps.length - real.length,
+    scenario: c.sc.id, result, time_ms: r ? r.t : t,
+    taps: real.length, dead_taps: dead.length, dup_taps: c.counted.length - real.length,
     first_tap: first ? (first.target || first.kind) + ' @' + first.screen + (first.overlay ? '/' + first.overlay : '') : '',
-    first_tap_dead: first ? (first.kind === 'dead' || first.kind === 'overlay_dead') : null,
+    first_tap_dead: first ? !!MISS[first.kind] : null,
     path: c.visited.join(' > '), task_reopens: events.filter(e => e.type === 'task_reopen' && e.scenario === c.sc.id).length,
-    via_missing: viaMissing(c).join(', '),
-    target_first_tap: c.hit.first_tap, target_first_ms: c.hit.first_ms, target_visits: c.hit.visits, left_target: c.hit.left,
-    env: lastEnv, env_changes: c.env_changes
+    via_missing: r ? r.via_missing : viaMissing(c).join(', '),
+    target_first_tap: c.hit.first_tap, target_first_ms: c.hit.first_ms,
+    target_visits: c.hit.na ? null : c.hit.visits, left_target: c.hit.na ? null : c.hit.left,
+    env: lastEnv, env_changes: c.env_changes,
+    finish: c.finish, done_ms: r ? t : null, after_taps: r ? c.taps.slice(r.n).filter(e => !e.dup).length : null,
+    mode: ISOLATED ? 'isolated' : 'shared', masked_taps: masked.length, masked_first: masked.length ? masked[0].target : '',
+    masked_scrolls: c.masked_scrolls,
+    cheat_taps: cheats.length, cheat_first: cheats.length ? cheats[0].target : '',
+    offpath_taps: offp.length, offpath_first: first && first.kind === 'offpath' ? first.target : ''
   };
   summaries.push(c.summary);
-  pill.classList.remove('on');
-  if (result === 'success' || result === 'wrong_path'){
-    toast.textContent = 'Задание завершено'; toast.classList.add('on');
-    setTimeout(() => { toast.classList.remove('on'); askScenario(c); }, 1100);
-  } else askScenario(c);
+  pill.classList.remove('on'); doneBtn.classList.remove('on'); tbRender();
+  askScenario(c);   // выполнено — респондент уже нажал «Готово» / «К вопросам»; не получилось — сразу к вопросам
 }
 
 /* Вопросы сценария: сначала уточнение по промаху (пока свежо), потом вопросы из конфига. */
 function askScenario(c){
   const qs = [];
-  const dead = c.taps.filter(e => !e.dup && (e.kind === 'dead' || e.kind === 'overlay_dead'));
+  const dead = c.counted.filter(e => !e.dup && MISS[e.kind]);   // до выполнения задания; masked — тоже промах
   if (c.sc.misclick_followup !== false && dead.length){
     const d = dead[0];
     qs.push({id: c.sc.id + '_MISS', hyp: (c.sc.hypotheses || []).join(','), type: 'text', auto: 'misclick',
       text: 'В этом задании вы нажали в отмеченное место. Что вы ожидали там найти или сделать?',
       image: {screen: d.screen, overlay: d.overlay}, mark: {x: d.x, y: d.y}, tap_ref: d.n});
+  }
+  const op = c.counted.find(e => !e.dup && e.kind === 'offpath');   // путь вне прототипа: вопрос — только если включён намеренно
+  if (op && c.sc.offpath_question){
+    qs.push({id: c.sc.id + '_OFFPATH', hyp: (c.sc.hypotheses || []).join(','), type: 'text', auto: 'offpath',
+      text: typeof c.sc.offpath_question === 'string' ? c.sc.offpath_question : 'В этом задании вы нажали в отмеченное место. Что вы ожидали там найти?',
+      image: {screen: op.screen, overlay: op.overlay}, mark: {x: op.x, y: op.y}, tap_ref: op.n});
   }
   (c.sc.questions || []).forEach(q => qs.push(q));
   runQuestions(qs, c, () => {
@@ -742,16 +1174,26 @@ function askOne(q, c, i, n, ok){
   const body = document.getElementById('ut-body');
   const t0 = performance.now();
   let value = null, extra = {};
-  // картинка (и метка) — у вопроса любого типа; у tap своя картинка-мишень ниже
-  if (q.image && q.type !== 'tap') body.appendChild(frame(q.image, q.mark ? [{x: q.mark.x, y: q.mark.y, cls: 'ref'}] : []));
+  /* «Дальше» неактивна (серая), пока нет ответа на обязательный вопрос; тап по ней — подсказка, что сделать
+     (оператор 11.11.2026: раньше кнопка молча не срабатывала). */
+  const nextBtn = document.getElementById('ut-next');
+  const setVal = v => { value = v; nextBtn.classList.toggle('ut-off', value == null && !q.optional); };
+  setVal(null);
+  const NEED = {tap: 'Сначала нажмите на картинку — отметьте место', choice: 'Сначала выберите вариант ответа',
+                scale: 'Сначала выберите оценку', text: 'Сначала напишите ответ'};
+  // картинка (и метка) — у вопроса любого типа, тап открывает её на весь экран; у tap своя картинка-мишень ниже
+  if (q.image && q.type !== 'tap'){
+    body.appendChild(zoomableFrame(q.image, q.mark ? [{x: q.mark.x, y: q.mark.y, cls: 'ref'}] : [], () => { extra.zoom_used = true; }));
+    body.insertAdjacentHTML('beforeend', '<p class="ut-muted ut-zoom-tip">Нажмите на картинку, чтобы рассмотреть</p>');
+  }
   if (q.type === 'text'){
     const ta = document.createElement('textarea'); ta.rows = 3; ta.placeholder = 'Ваш ответ';
-    ta.oninput = () => { value = ta.value.trim() || null; }; body.appendChild(ta);
+    ta.oninput = () => setVal(ta.value.trim() || null); body.appendChild(ta);
   } else if (q.type === 'choice' || q.type === 'scale'){
     const opts = q.type === 'scale' ? Array.from({length: q.max - q.min + 1}, (_, k) => String(q.min + k)) : q.options;
     const box = document.createElement('div'); box.className = 'ut-opts' + (q.type === 'scale' ? ' scale' : '');
     opts.forEach(o => { const b = document.createElement('button'); b.type = 'button'; b.textContent = o;
-      b.onclick = () => { box.querySelectorAll('button').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); value = o; }; box.appendChild(b); });
+      b.onclick = () => { box.querySelectorAll('button').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); setVal(o); }; box.appendChild(b); });
     body.appendChild(box);
     if (q.type === 'scale' && q.labels) body.insertAdjacentHTML('beforeend', '<div class="ut-scale-l"><span>' + esc(q.labels[0]) + '</span><span>' + esc(q.labels[1]) + '</span></div>');
   } else if (q.type === 'tap'){
@@ -761,15 +1203,14 @@ function askOne(q, c, i, n, ok){
     f.addEventListener('click', e => {
       const r = f.getBoundingClientRect();
       const x = Math.round((e.clientX - r.left) / r.width * W), y = Math.round((e.clientY - r.top) / r.height * H);
-      if (m) m.remove(); m = addMarker(f, x, y); value = x + ',' + y; extra = {x, y};
+      if (m) m.remove(); m = addMarker(f, x, y); extra = {x, y}; setVal(x + ',' + y);
     });
   }
   const rb = document.getElementById('ut-recall');
   if (rb) rb.onclick = () => {
     const strip = document.getElementById('ut-strip'); strip.innerHTML = ''; rb.remove();
     extra.recall_used = true;
-    c.visited.forEach(sid => { const f = frame({screen: sid}); f.classList.add('thumb');
-      f.onclick = () => { zoom.innerHTML = ''; zoom.appendChild(frame({screen: sid})); zoom.classList.add('on'); }; strip.appendChild(f); });
+    c.visited.forEach(sid => { const f = zoomableFrame({screen: sid}); f.classList.add('thumb'); strip.appendChild(f); });
   };
   const save = skipped => {
     answers.push(Object.assign({
@@ -779,8 +1220,8 @@ function askOne(q, c, i, n, ok){
     }, extra));
     ok();
   };
-  document.getElementById('ut-next').onclick = () => {
-    if (value == null && !q.optional){ body.classList.remove('shake'); void body.offsetWidth; body.classList.add('shake'); return; }
+  nextBtn.onclick = () => {
+    if (value == null && !q.optional){ hint(NEED[q.type] || 'Сначала ответьте на вопрос'); return; }
     save(value == null);
   };
   const sk = document.getElementById('ut-skip'); if (sk) sk.onclick = () => save(true);
@@ -790,6 +1231,7 @@ function outro(){
   const qs = (C.outro && C.outro.questions) || [];
   runQuestions(qs, null, async () => {
     session.finished_at = new Date().toISOString();
+    testOn = false; fsGate.classList.remove('on');
     showPanel('<h2>Отправляем ответы…</h2>');
     await enqueue('final', {summaries, answers: answers.filter(a => a.scenario === 'final')});
     if (!C.endpoint){
