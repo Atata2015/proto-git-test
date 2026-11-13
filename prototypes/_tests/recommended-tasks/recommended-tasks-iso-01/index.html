@@ -410,6 +410,8 @@ html.ut-panel #ut-panel{display:block}
 #ut #ut-fsgo{box-shadow:0 4px 14px rgba(0,0,0,.45)}
 .ut-alt{background:transparent;color:var(--ut-muted);padding:12px 10px;min-height:44px;font-weight:500!important}
 .ut-link{background:none;color:var(--ut-acc);padding:8px 0;font-weight:500!important;text-decoration:underline}
+/* «Нажал(а) случайно» — над полем ответа, кнопка с обводкой (оператор 13.11.2026: серую надпись рядом с «Дальше» не заметили) */
+#ut .ut-acc{display:block;margin-top:10px;background:transparent;color:var(--ut-fg);border:1.5px solid var(--ut-muted);padding:11px 18px;min-height:44px}
 .ut-lbl{display:block;margin-top:14px;color:var(--ut-muted);font-size:13px}
 #ut input,#ut textarea{display:block;width:100%;margin-top:6px;background:var(--ut-card);color:var(--ut-fg);border:1px solid var(--ut-line);border-radius:10px;padding:11px 12px;font:16px/1.4 inherit;font-family:inherit}
 #ut input.err{border-color:#e5484d}
@@ -1256,8 +1258,7 @@ function askOne(q, c, i, n, ok){
   const head = c ? '<div class="ut-step">Задание ' + (c.idx + 1) + ' · вопрос ' + (i + 1) + ' из ' + n + '</div>' : '<div class="ut-step">Вопрос ' + (i + 1) + ' из ' + n + '</div>';
   showPanel(head + '<h2>' + esc(q.text) + '</h2><div id="ut-body"></div>' +
     (q.recall && c ? '<button class="ut-link" id="ut-recall">Показать экраны, которые вы прошли</button><div id="ut-strip"></div>' : '') +
-    '<div class="ut-row"><button class="ut-main" id="ut-next">Дальше</button>' + (q.optional ? '<button class="ut-alt" id="ut-skip">Пропустить</button>' : '') +
-    (q.auto === 'misclick' ? '<button class="ut-alt" id="ut-acc">' + ACCIDENTAL + '</button>' : '') + '</div>');
+    '<div class="ut-row"><button class="ut-main" id="ut-next">Дальше</button>' + (q.optional ? '<button class="ut-alt" id="ut-skip">Пропустить</button>' : '') + '</div>');
   const body = document.getElementById('ut-body');
   const t0 = performance.now();
   let value = null, extra = {};
@@ -1274,6 +1275,8 @@ function askOne(q, c, i, n, ok){
     body.insertAdjacentHTML('beforeend', '<p class="ut-muted ut-zoom-tip">Нажмите на картинку, чтобы рассмотреть</p>');
   }
   if (q.type === 'text'){
+    // вопрос по промаху: «Нажал(а) случайно» — над полем ответа, видна до того, как респондент начнёт печатать
+    if (q.auto === 'misclick') body.insertAdjacentHTML('beforeend', '<button type="button" class="ut-acc" id="ut-acc">' + ACCIDENTAL + '</button>');
     const ta = document.createElement('textarea'); ta.rows = 3; ta.placeholder = 'Ваш ответ';
     ta.oninput = () => setVal(ta.value.trim() || null); body.appendChild(ta);
   } else if (q.type === 'choice' || q.type === 'scale'){
