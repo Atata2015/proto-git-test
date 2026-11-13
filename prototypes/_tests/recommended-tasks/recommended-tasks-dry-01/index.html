@@ -500,7 +500,7 @@ const rid = () => Math.random().toString(36).slice(2, 10);
 const session = {
   test_id: C.test_id, session_id: new Date().toISOString().slice(0, 10) + '-' + rid(),
   respondent: '', started_at: new Date().toISOString(), finished_at: null,
-  stage: '', prev_done: 0,   // статус теста в каталоге (pilot / live …) и сколько раз тест уже пройден в этом браузере
+  stage: '', prev_done: 0, reloads: 0,   // статус теста в каталоге (pilot / live …) и сколько раз тест уже пройден в этом браузере
   proto: C.prototype || {}, ua: navigator.userAgent,
   screen: screen.width + 'x' + screen.height, dpr: devicePixelRatio || 1
 };
@@ -624,6 +624,40 @@ function blockedBy(m){
 }
 function showDone(){ showPanel('<h2>Вы уже прошли этот тест</h2><p class="ut-muted">Спасибо за участие! Проходить его ещё раз не нужно.</p>'); }
 const showBlocked = why => why === 'closed' ? showClosed() : showDone();
+/* ---------- Восстановление сессии после перезагрузки страницы (оператор 13.11.2026) ----------
+   Снимок (SKEY): session, summaries, answers, events, next — карточка следующего задания, at — где остановились:
+     null — на карточке задания next; {task} — внутри задания; {q, qs, from, visited} — на вопросе from задания q;
+     {q, …, reached: true} — задание выполнено, «Готово» / «К вопросам» ещё не нажаты (сводка — на момент выполнения,
+     done_ms и after_taps пусты: неизвестны); {final} — на финальном вопросе final.
+   Пишется на старте, на старте задания, при выполнении задания, перед вопросами и после каждого ответа; на финале удаляется.
+   «Продолжить» ведёт туда, где остановились: вопросы — с первого неотвеченного (задание уже выполнено, его метрики
+   посчитаны), карточка — на неё; внутри задания — задание заново с карточки (состояние прототипа и время не
+   восстановить; данные прерванной попытки не отправлялись; в сводке after_reload). Тот же session_id, reloads + 1,
+   сообщение resume, событие reload в задании, на вопросах которого прервали.
+   Не восстанавливаем: снимок старше SNAP_TTL_MS, после close_at, другая сборка теста (BUILD) или формат снимка (SNAP_FMT).
+   Только этот браузер. */
+const SKEY = 'ut_sess_' + C.test_id;
+const SNAP_TTL_MS = 24 * 3600 * 1000;
+const SNAP_FMT = 2;
+const hashStr = t => { let h = 5381; for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
+const BUILD = hashStr(JSON.stringify(C)) + '.' + ((C.prototype && C.prototype.version) || '');
+let reloadIdx = -1;   // задание, прерванное перезагрузкой и начатое заново
+function saveSnap(next, at, sums){
+  try { localStorage.setItem(SKEY, JSON.stringify({fmt: SNAP_FMT, build: BUILD, saved_at: Date.now(), next, at: at || null, session,
+                                                   summaries: sums || summaries, answers, events})); } catch (e) {}
+}
+function clearSnap(){ try { localStorage.removeItem(SKEY); } catch (e) {} }
+function loadSnap(){
+  let sn = null;
+  try { sn = JSON.parse(localStorage.getItem(SKEY) || 'null'); } catch (e) {}
+  if (!sn) return null;
+  const closed = C.close_at && new Date() > new Date(C.close_at);
+  const at = sn.at || {};
+  const okAt = at.q == null || (!!C.scenarios[at.q] && Array.isArray(at.qs) && at.from >= 0 && at.from <= at.qs.length);
+  if (sn.fmt !== SNAP_FMT || sn.build !== BUILD || !sn.session || Date.now() - sn.saved_at > SNAP_TTL_MS || closed
+      || !(sn.next >= 0 && sn.next <= C.scenarios.length) || sn.session.test_id !== C.test_id || !okAt){ clearSnap(); return null; }
+  return sn;
+}
 function markDone(){ const d = lsGet(DKEY); d.push({at: session.finished_at, stage: session.stage, session_id: session.session_id}); lsSet(DKEY, d); }
 
 /* ---------- Изолированный режим: маска ----------
@@ -903,6 +937,10 @@ function markReached(result, tap){
   const c = cur;
   c.reached = {result, t: tap ? tap.t : now() - c.t0, n: tap ? tap.n : c.taps.length, via_missing: viaMissing(c).join(', ')};
   events.push({type: 'reached', scenario: c.sc.id, t: c.reached.t, screen: P.screen, overlay: P.overlay, result});
+  // перезагрузка до «Готово» / «К вопросам» — к вопросам, а не задание заново: метрики уже зафиксированы на этот момент
+  // (оператор 13.11.2026); время до нажатия и тапы после выполнения неизвестны — пусто
+  const sm = Object.assign(summarize(c, result, null), {after_taps: null});
+  saveSnap(c.idx, {q: c.idx, qs: scenarioQs(c), from: 0, visited: c.visited.slice(), reached: true}, summaries.concat([sm]));
 }
 /* finish: done — «Готово» тоже не сразу (оператор 11.11.2026): по тому же правилу, что плашка у auto, — когда в прототипе
    всё закончится, и ещё QUIET_MS. Прототип при этом не блокируется: респондент смотрит результат. */
@@ -1134,7 +1172,50 @@ async function ensureFullscreen(){
 }
 
 /* ---------- Шаги ---------- */
+function resumePanel(sn){
+  const at = sn.at || {}, N = C.scenarios.length;
+  const where = at.q != null && at.from >= at.qs.length ? (at.q + 1 < N ? 'с задания ' + (at.q + 2) + ' из ' + N + '.' : 'с последних вопросов.')
+    : at.q != null ? 'с вопроса ' + (at.from + 1) + ' из ' + at.qs.length + ' к заданию ' + (at.q + 1) + '.'
+    : at.final != null || sn.next >= N ? 'с последних вопросов.'
+    : at.task != null ? 'с задания ' + (at.task + 1) + ' из ' + N + '. Задание начнётся заново.'
+    : 'с задания ' + (sn.next + 1) + ' из ' + N + '.';
+  const saved = at.q != null && at.reached ? 'Задание ' + (at.q + 1) + ' выполнено, ваши ответы сохранены' : 'Ваши ответы сохранены';
+  showPanel('<h2>Тест не завершён</h2><p>Страница была перезагружена. ' + saved + ' — можно продолжить ' + where + '</p>' +
+    '<div class="ut-row"><button class="ut-main" id="ut-resume">Продолжить</button><button class="ut-alt" id="ut-fresh">Начать заново</button></div>');
+  document.getElementById('ut-fresh').onclick = () => { clearSnap(); start(); };
+  const btn = document.getElementById('ut-resume');
+  btn.onclick = async () => {
+    if (btn.dataset.busy) return;                      // двойной тап, пока ждём каталог и полноэкранный режим: восстановить один раз
+    btn.dataset.busy = '1';
+    const why = blockedBy(await metaReady);
+    if (why) return showBlocked(why);
+    Object.assign(session, sn.session, {stage: session.stage, prev_done: session.prev_done, reloads: (sn.session.reloads || 0) + 1});
+    summaries.push(...(sn.summaries || [])); answers.push(...(sn.answers || [])); events.push(...(sn.events || []));
+    await ensureFullscreen();
+    testOn = true;
+    session.env = env(); lastEnv = envStr(session.env);
+    saveSnap(sn.next, sn.at);                          // reloads + 1 — в снимок сразу
+    enqueue('resume', {scenario: 'r' + session.reloads}).then(() => { if (sendState.closed) showClosed(); });
+    if (at.q != null){                                 // вопросы выполненного задания — с первого неотвеченного
+      const sc = C.scenarios[at.q];
+      const evs = events.filter(e => e.scenario === sc.id && e.t != null);
+      const tLast = evs.length ? Math.max(...evs.map(e => e.t)) : 0;   // время сценария продолжается с последнего события
+      const c = {sc, idx: at.q, visited: at.visited || [], done: true, t0: now() - tLast, counted: [],
+                 summary: summaries.filter(x => x.scenario === sc.id).pop()};
+      cur = c;
+      events.push({type: 'reload', scenario: sc.id, t: tLast});
+      scenarioQuestions(c, at.qs, at.from);
+    } else if (at.final != null || sn.next >= N) outro(at.final || 0);
+    else {
+      if (at.task != null) reloadIdx = at.task;        // задание прервано внутри — заново, в сводке after_reload
+      taskCard(sn.next);
+    }
+  };
+}
+
 function start(){
+  const sn = loadSnap();
+  if (sn) return resumePanel(sn);
   const it = C.intro || {};
   showPanel('<h1>' + esc(it.title || 'Тест') + '</h1>' + para(it.text || '') +
     (it.ask_name ? '<label class="ut-lbl">Ваше имя или ник в Slack<input id="ut-name" autocomplete="off"></label>' : '') +
@@ -1149,6 +1230,7 @@ function start(){
     await ensureFullscreen();
     testOn = true;
     session.env = env(); lastEnv = envStr(session.env);
+    saveSnap(0, null);
     enqueue('start', {}).then(() => { if (sendState.closed) showClosed(); });   // приёмник закрыл тест раньше close_at в HTML
     taskCard(0);
   };
@@ -1172,6 +1254,7 @@ function taskCard(idx){
 
 function runScenario(idx){
   const sc = C.scenarios[idx];
+  saveSnap(idx, {task: idx});                          // перезагрузка внутри задания — задание заново
   P.reset(sc.start || SPEC.start);
   cur = {sc, idx, t0: now(), taps: [], visited: [P.screen], done: false, result: null, env_changes: 0,
          finish: finishMode(sc), reached: null, masked_scrolls: 0, viewT: 0,   // viewT — когда показан текущий экран/оверлей (для reflex)
@@ -1210,8 +1293,16 @@ doneBtn.onclick = () => { if (cur && !cur.done && !cur.wait && cur.reached && cu
    как у auto; время до «Готово» и тапы после выполнения — отдельно (done_ms, after_taps). */
 function finishScenario(result){
   const c = cur; c.done = true; c.result = result;
-  const t = now() - c.t0, r = c.reached;
+  const t = now() - c.t0;
   events.push({type: 'scenario_end', scenario: c.sc.id, t, screen: P.screen, result});
+  c.summary = summarize(c, result, t);
+  summaries.push(c.summary);
+  pill.classList.remove('on'); doneBtn.classList.remove('on'); tbRender();
+  askScenario(c);   // выполнено — респондент уже нажал «Готово» / «К вопросам»; не получилось — сразу к вопросам
+}
+/* Сводка задания на момент t (конец задания; null — ещё не завершено: done_ms пусто). Ставит c.counted и c.missPick. */
+function summarize(c, result, t){
+  const r = c.reached;
   c.counted = r ? c.taps.slice(0, r.n) : c.taps;
   const real = c.counted.filter(e => !e.dup);
   const dead = real.filter(e => MISS[e.kind]);
@@ -1220,7 +1311,7 @@ function finishScenario(result){
   const offp = real.filter(e => e.kind === 'offpath');
   const first = real[0];
   c.missPick = pickMiss(c, dead);
-  c.summary = {
+  return {
     scenario: c.sc.id, result, time_ms: r ? r.t : t,
     taps: real.length, dead_taps: dead.length, dup_taps: c.counted.length - real.length,
     first_tap: first ? (first.target || first.kind) + ' @' + first.screen + (first.overlay ? '/' + first.overlay : '') + (first.elem ? ': ' + first.elem : '') : '',
@@ -1230,16 +1321,14 @@ function finishScenario(result){
     target_first_tap: c.hit.first_tap, target_first_ms: c.hit.first_ms,
     target_visits: c.hit.na ? null : c.hit.visits, left_target: c.hit.na ? null : c.hit.left,
     env: lastEnv, env_changes: c.env_changes,
-    finish: c.finish, done_ms: r ? t : null, after_taps: r ? c.taps.slice(r.n).filter(e => !e.dup).length : null,
+    finish: c.finish, done_ms: r && t != null ? t : null, after_taps: r ? c.taps.slice(r.n).filter(e => !e.dup).length : null,
     mode: ISOLATED ? 'isolated' : 'shared', masked_taps: masked.length, masked_first: masked.length ? masked[0].target : '',
     masked_scrolls: c.masked_scrolls,
     cheat_taps: cheats.length, cheat_first: cheats.length ? cheats[0].target : '',
     offpath_taps: offp.length, offpath_first: first && first.kind === 'offpath' ? first.target : '',
-    miss_filtered: dead.filter(e => e.miss_filter).length, miss_pick: c.missPick ? c.missPick.why : ''
+    miss_filtered: dead.filter(e => e.miss_filter).length, miss_pick: c.missPick ? c.missPick.why : '',
+    after_reload: session.reloads > 0 && c.idx === reloadIdx
   };
-  summaries.push(c.summary);
-  pill.classList.remove('on'); doneBtn.classList.remove('on'); tbRender();
-  askScenario(c);   // выполнено — респондент уже нажал «Готово» / «К вопросам»; не получилось — сразу к вопросам
 }
 
 /* Промах для вопроса (dead — промахи до выполнения задания, без дублей): среди неотмеченных фильтром — самый осмысленный.
@@ -1260,7 +1349,8 @@ function pickMiss(c, dead){
 }
 
 /* Вопросы сценария: сначала уточнение по промаху (пока свежо), потом вопросы из конфига. */
-function askScenario(c){
+function askScenario(c){ scenarioQuestions(c, scenarioQs(c), 0); }
+function scenarioQs(c){
   const qs = [];
   if (c.missPick){
     const d = c.missPick.tap;
@@ -1275,19 +1365,26 @@ function askScenario(c){
       image: {screen: op.screen, overlay: op.overlay}, mark: {x: op.x, y: op.y}, tap_ref: op.n});
   }
   (c.sc.questions || []).forEach(q => qs.push(q));
+  return qs;
+}
+/* Вопросы задания с вопроса from (после перезагрузки — с первого неотвеченного); снимок — перед вопросом и после ответа. */
+function scenarioQuestions(c, qs, from){
+  const snap = i => saveSnap(c.idx, {q: c.idx, qs, from: i, visited: c.visited});
+  if (from < qs.length) snap(from);
   runQuestions(qs, c, () => {
     enqueue('scenario', {scenario: c.sc.id, summary: c.summary,
       events: events.filter(e => e.scenario === c.sc.id),
       answers: answers.filter(a => a.scenario === c.sc.id)});
     cur = null;
+    saveSnap(c.idx + 1, null);
     if (c.idx + 1 < C.scenarios.length) taskCard(c.idx + 1); else outro();
-  });
+  }, from, i => { if (i < qs.length) snap(i); });
 }
 
 const ACCIDENTAL = 'Нажал(а) случайно';   // ответ кнопки в вопросе по промаху (в Answers — accidental = true)
-function runQuestions(qs, c, done){
-  let i = 0;
-  const next = () => { if (i >= qs.length) return done(); askOne(qs[i], c, i, qs.length, () => { i++; next(); }); };
+function runQuestions(qs, c, done, from, onStep){
+  let i = from || 0;
+  const next = () => { if (i >= qs.length) return done(); askOne(qs[i], c, i, qs.length, () => { i++; if (onStep) onStep(i); next(); }); };
   next();
 }
 
@@ -1356,11 +1453,13 @@ function askOne(q, c, i, n, ok){
   const acc = document.getElementById('ut-acc'); if (acc) acc.onclick = () => { value = ACCIDENTAL; extra.accidental = true; save(false); };
 }
 
-function outro(){
+function outro(from){
   const qs = (C.outro && C.outro.questions) || [];
+  const N = C.scenarios.length;
+  if ((from || 0) < qs.length) saveSnap(N, {final: from || 0});
   runQuestions(qs, null, async () => {
     session.finished_at = new Date().toISOString();
-    markDone();
+    markDone(); clearSnap();
     testOn = false; fsGate.classList.remove('on');
     showPanel('<h2>Отправляем ответы…</h2>');
     await enqueue('final', {summaries, answers: answers.filter(a => a.scenario === 'final')});
@@ -1371,7 +1470,7 @@ function outro(){
         const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = session.session_id + '.json'; a.click();
       };
     } else finishPanel();
-  });
+  }, from || 0, i => { if (i < qs.length) saveSnap(N, {final: i}); });
 }
 
 /* Итог отправки: всё доставлено — спасибо; тест закрыт; ошибка настройки; нет сети / сбой — «Повторить». */

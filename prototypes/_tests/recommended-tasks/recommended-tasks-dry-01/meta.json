@@ -20,11 +20,11 @@
     "updated_at": "2026-11-12T15:25:59.134+00:00",
     "size": 1442308
   },
-  "version": 7,
+  "version": 8,
   "created_at": "2026-11-10T12:37:19.909+00:00",
-  "updated_at": "2026-11-13T10:26:58.434+00:00",
-  "sha256": "cdc3f642ded08500b1cc7eb1ab4170f8021e456f7a293fcfd9bf136e948ac6f5",
-  "size": 3909393,
+  "updated_at": "2026-11-13T15:03:06.594+00:00",
+  "sha256": "f9518617f57501afc2b4ea69b4755d8ce86c6b0f70b73dec162859eefa1f8141",
+  "size": 3918036,
   "history": [
     {
       "status": "draft",
