@@ -500,7 +500,7 @@ const rid = () => Math.random().toString(36).slice(2, 10);
 const session = {
   test_id: C.test_id, session_id: new Date().toISOString().slice(0, 10) + '-' + rid(),
   respondent: '', started_at: new Date().toISOString(), finished_at: null,
-  stage: '', prev_done: 0,   // статус теста в каталоге (pilot / live …) и сколько раз тест уже пройден в этом браузере
+  stage: '', prev_done: 0, reloads: 0,   // статус теста в каталоге (pilot / live …) и сколько раз тест уже пройден в этом браузере
   proto: C.prototype || {}, ua: navigator.userAgent,
   screen: screen.width + 'x' + screen.height, dpr: devicePixelRatio || 1
 };
@@ -624,6 +624,28 @@ function blockedBy(m){
 }
 function showDone(){ showPanel('<h2>Вы уже прошли этот тест</h2><p class="ut-muted">Спасибо за участие! Проходить его ещё раз не нужно.</p>'); }
 const showBlocked = why => why === 'closed' ? showClosed() : showDone();
+/* ---------- Восстановление сессии после перезагрузки страницы ----------
+   Снимок (SKEY) пишется на старте и после каждого задания с его вопросами: session, summaries, answers, events, номер
+   следующего задания. Внутри задания ничего не храним: задание, прерванное перезагрузкой, начинается с карточки заново,
+   его данные не отправлялись. При открытии свежий снимок (SNAP_TTL_MS и до close_at; та же сборка теста) предлагает
+   «Продолжить / Начать заново». Продолжение — тот же session_id, reloads + 1, сообщение resume. Только этот браузер. */
+const SKEY = 'ut_sess_' + C.test_id;
+const SNAP_TTL_MS = 24 * 3600 * 1000;
+const hashStr = t => { let h = 5381; for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
+const BUILD = hashStr(JSON.stringify(C)) + '.' + ((C.prototype && C.prototype.version) || '');
+let reloadIdx = -1;   // задание, начатое заново после перезагрузки
+function saveSnap(next){
+  try { localStorage.setItem(SKEY, JSON.stringify({build: BUILD, saved_at: Date.now(), next, session, summaries, answers, events})); } catch (e) {}
+}
+function clearSnap(){ try { localStorage.removeItem(SKEY); } catch (e) {} }
+function loadSnap(){
+  let sn = null;
+  try { sn = JSON.parse(localStorage.getItem(SKEY) || 'null'); } catch (e) {}
+  if (!sn) return null;
+  const closed = C.close_at && new Date() > new Date(C.close_at);
+  if (sn.build !== BUILD || !sn.session || Date.now() - sn.saved_at > SNAP_TTL_MS || closed || !(sn.next >= 0) || sn.session.test_id !== C.test_id){ clearSnap(); return null; }
+  return sn;
+}
 function markDone(){ const d = lsGet(DKEY); d.push({at: session.finished_at, stage: session.stage, session_id: session.session_id}); lsSet(DKEY, d); }
 
 /* ---------- Изолированный режим: маска ----------
@@ -1134,7 +1156,30 @@ async function ensureFullscreen(){
 }
 
 /* ---------- Шаги ---------- */
+function resumePanel(sn){
+  const fin = sn.next >= C.scenarios.length;
+  showPanel('<h2>Тест не завершён</h2><p>Страница была перезагружена. Ваши ответы сохранены — можно продолжить' +
+    (fin ? ' с последних вопросов.' : ' с задания ' + (sn.next + 1) + ' из ' + C.scenarios.length + '. Текущее задание начнётся заново.') + '</p>' +
+    '<div class="ut-row"><button class="ut-main" id="ut-resume">Продолжить</button><button class="ut-alt" id="ut-fresh">Начать заново</button></div>');
+  document.getElementById('ut-fresh').onclick = () => { clearSnap(); start(); };
+  document.getElementById('ut-resume').onclick = async () => {
+    const why = blockedBy(await metaReady);
+    if (why) return showBlocked(why);
+    Object.assign(session, sn.session, {stage: session.stage, prev_done: session.prev_done, reloads: (sn.session.reloads || 0) + 1});
+    summaries.push(...(sn.summaries || [])); answers.push(...(sn.answers || [])); events.push(...(sn.events || []));
+    await ensureFullscreen();
+    testOn = true;
+    session.env = env(); lastEnv = envStr(session.env);
+    reloadIdx = sn.next;
+    saveSnap(sn.next);
+    enqueue('resume', {scenario: 'r' + session.reloads}).then(() => { if (sendState.closed) showClosed(); });
+    if (fin) outro(); else taskCard(sn.next);
+  };
+}
+
 function start(){
+  const sn = loadSnap();
+  if (sn) return resumePanel(sn);
   const it = C.intro || {};
   showPanel('<h1>' + esc(it.title || 'Тест') + '</h1>' + para(it.text || '') +
     (it.ask_name ? '<label class="ut-lbl">Ваше имя или ник в Slack<input id="ut-name" autocomplete="off"></label>' : '') +
@@ -1149,6 +1194,7 @@ function start(){
     await ensureFullscreen();
     testOn = true;
     session.env = env(); lastEnv = envStr(session.env);
+    saveSnap(0);
     enqueue('start', {}).then(() => { if (sendState.closed) showClosed(); });   // приёмник закрыл тест раньше close_at в HTML
     taskCard(0);
   };
@@ -1235,7 +1281,8 @@ function finishScenario(result){
     masked_scrolls: c.masked_scrolls,
     cheat_taps: cheats.length, cheat_first: cheats.length ? cheats[0].target : '',
     offpath_taps: offp.length, offpath_first: first && first.kind === 'offpath' ? first.target : '',
-    miss_filtered: dead.filter(e => e.miss_filter).length, miss_pick: c.missPick ? c.missPick.why : ''
+    miss_filtered: dead.filter(e => e.miss_filter).length, miss_pick: c.missPick ? c.missPick.why : '',
+    after_reload: session.reloads > 0 && c.idx === reloadIdx
   };
   summaries.push(c.summary);
   pill.classList.remove('on'); doneBtn.classList.remove('on'); tbRender();
@@ -1280,6 +1327,7 @@ function askScenario(c){
       events: events.filter(e => e.scenario === c.sc.id),
       answers: answers.filter(a => a.scenario === c.sc.id)});
     cur = null;
+    saveSnap(c.idx + 1);
     if (c.idx + 1 < C.scenarios.length) taskCard(c.idx + 1); else outro();
   });
 }
@@ -1360,7 +1408,7 @@ function outro(){
   const qs = (C.outro && C.outro.questions) || [];
   runQuestions(qs, null, async () => {
     session.finished_at = new Date().toISOString();
-    markDone();
+    markDone(); clearSnap();
     testOn = false; fsGate.classList.remove('on');
     showPanel('<h2>Отправляем ответы…</h2>');
     await enqueue('final', {summaries, answers: answers.filter(a => a.scenario === 'final')});
