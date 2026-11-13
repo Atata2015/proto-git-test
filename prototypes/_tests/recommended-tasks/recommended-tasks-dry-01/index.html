@@ -634,6 +634,17 @@ const ISOLATED = C.mode === 'isolated';
    Тап по читу работает как обычно, пишется как kind = cheat; если чит нажат до выполнения задания — результат wrong_path. */
 const CHEATS = new Set(C.cheat_ids || []);
 const MISS = {dead: true, overlay_dead: true, masked: true};   // промахи (offpath — не промах)
+/* Вопрос по промаху — не по случайным тапам (8.4, п. 6; оператор 13.11.2026). Промах остаётся промахом в метриках,
+   пометка miss_filter только убирает его из кандидатов на вопрос:
+     slip    — «толстый палец»: за промахом ≤ MISS_SLIP_MS тап по работающей кнопке рядом (≤ MISS_NEAR_PX экрана), тот же экран/оверлей;
+     reflex  — промах ≤ MISS_REFLEX_MS после смены экрана/оверлея (или старта задания), в том числе во время анимации перехода;
+     overlay — пустое место внутри окна оверлея (overlay_dead).
+   Из оставшихся спрашиваем про самый осмысленный (miss_pick): masked → repeat (≥ 2 промаха рядом) → pause (≥ MISS_PAUSE_MS
+   без тапов перед ним) → first. Пороги — на глаз, консервативные; калибровка — по логу первых реальных тестов. */
+const MISS_SLIP_MS = 1500, MISS_NEAR_PX = 40, MISS_REFLEX_MS = 400, MISS_PAUSE_MS = 2000;
+const tapScale = new WeakMap();   // масштаб сцены на момент тапа: расстояния — в пикселях экрана, а не макета
+const nearTaps = (a, b) => a.screen === b.screen && (a.overlay || null) === (b.overlay || null)
+  && Math.hypot(a.x - b.x, a.y - b.y) * (tapScale.get(b) || tapScale.get(a) || 1) <= MISS_NEAR_PX;
 const maskAllows = (pats, id) => pats.some(p => id === p || (p.slice(-2) === '/*' && id.indexOf(p.slice(0, -1)) === 0));
 /* ID областей прокрутки — в порядке, в котором движок строит DOM (экран: области вглубь, потом оверлеи).
    Сверяется с DOM: число областей и ID хотспотов внутри; не сошлось — прокрутку не блокируем (маска тапов работает). */
@@ -739,8 +750,23 @@ document.getElementById('viewport').addEventListener('click', e => {
   const dup = !!prev && t - prev.t < 350 && Math.abs(prev.x - x) < 40 && Math.abs(prev.y - y) < 40;
   const ev = {type: 'tap', scenario: cur.sc.id, n: cur.taps.length + 1, t, screen: P.screen, overlay: P.overlay,
               x, y, sx, sy, kind, target, dup, after_screen: null, after_overlay: null};
+  tapScale.set(ev, s);
+  if (!dup && MISS[kind]){
+    if (kind === 'overlay_dead') ev.miss_filter = 'overlay';
+    else if (t - cur.viewT <= MISS_REFLEX_MS) ev.miss_filter = 'reflex';
+  }
+  if (kind === 'hotspot' || kind === 'cheat')               // работающая кнопка (и быстрый повтор — dup): промахи рядом перед ней — «толстый палец»
+    cur.taps.forEach(p => { if (!p.dup && MISS[p.kind] && !p.miss_filter && t - p.t <= MISS_SLIP_MS && nearTaps(p, ev)) p.miss_filter = 'slip'; });
   cur.taps.push(ev); events.push(ev);
-  afterSettle(() => { ev.after_screen = P.screen; ev.after_overlay = P.overlay; checkSuccess({t, n: ev.n}); tbRender(); });
+  const c = cur;
+  afterSettle(() => {
+    ev.after_screen = P.screen; ev.after_overlay = P.overlay;
+    if (cur === c && (ev.after_screen !== ev.screen || (ev.after_overlay || null) !== (ev.overlay || null))){
+      c.viewT = now() - c.t0;                                 // новый экран/оверлей показан (после анимации перехода)
+      c.taps.forEach(p => { if (p.n > ev.n && !p.dup && MISS[p.kind] && !p.miss_filter) p.miss_filter = 'reflex'; });   // тапы во время перехода
+    }
+    checkSuccess({t, n: ev.n}); tbRender();
+  });
 }, true);
 
 window.__ut = {
@@ -1109,7 +1135,7 @@ function runScenario(idx){
   const sc = C.scenarios[idx];
   P.reset(sc.start || SPEC.start);
   cur = {sc, idx, t0: now(), taps: [], visited: [P.screen], done: false, result: null, env_changes: 0,
-         finish: finishMode(sc), reached: null, masked_scrolls: 0,
+         finish: finishMode(sc), reached: null, masked_scrolls: 0, viewT: 0,   // viewT — когда показан текущий экран/оверлей (для reflex)
          mask: ISOLATED ? (sc.active || []).concat(C.active_always || []) : null,
          hit: {first_tap: null, first_ms: null, visits: 0, at: false, left: false, na: false}};
   // экран/оверлей цели — уже на старте (цель — переменные на стартовом экране): «первое попадание» и «дошёл, но ушёл»
@@ -1154,6 +1180,7 @@ function finishScenario(result){
   const cheats = real.filter(e => e.kind === 'cheat');
   const offp = real.filter(e => e.kind === 'offpath');
   const first = real[0];
+  c.missPick = pickMiss(c, dead);
   c.summary = {
     scenario: c.sc.id, result, time_ms: r ? r.t : t,
     taps: real.length, dead_taps: dead.length, dup_taps: c.counted.length - real.length,
@@ -1168,19 +1195,36 @@ function finishScenario(result){
     mode: ISOLATED ? 'isolated' : 'shared', masked_taps: masked.length, masked_first: masked.length ? masked[0].target : '',
     masked_scrolls: c.masked_scrolls,
     cheat_taps: cheats.length, cheat_first: cheats.length ? cheats[0].target : '',
-    offpath_taps: offp.length, offpath_first: first && first.kind === 'offpath' ? first.target : ''
+    offpath_taps: offp.length, offpath_first: first && first.kind === 'offpath' ? first.target : '',
+    miss_filtered: dead.filter(e => e.miss_filter).length, miss_pick: c.missPick ? c.missPick.why : ''
   };
   summaries.push(c.summary);
   pill.classList.remove('on'); doneBtn.classList.remove('on'); tbRender();
   askScenario(c);   // выполнено — респондент уже нажал «Готово» / «К вопросам»; не получилось — сразу к вопросам
 }
 
+/* Промах для вопроса (dead — промахи до выполнения задания, без дублей): среди неотмеченных фильтром — самый осмысленный.
+   null — вопроса нет (вопрос выключен или все промахи случайные). */
+function pickMiss(c, dead){
+  if (c.sc.misclick_followup === false) return null;
+  const cand = dead.filter(e => !e.miss_filter);
+  if (!cand.length) return null;
+  const real = c.counted.filter(e => !e.dup);
+  const gap = e => { const i = real.indexOf(e); return e.t - (i > 0 ? real[i - 1].t : 0); };   // пауза перед тапом (первый — от старта задания)
+  let d = cand.find(e => e.kind === 'masked');
+  if (d) return {tap: d, why: 'masked'};
+  d = cand.find(a => cand.some(b => b !== a && nearTaps(a, b)));
+  if (d) return {tap: d, why: 'repeat'};
+  d = cand.find(e => gap(e) >= MISS_PAUSE_MS);
+  if (d) return {tap: d, why: 'pause'};
+  return {tap: cand[0], why: 'first'};
+}
+
 /* Вопросы сценария: сначала уточнение по промаху (пока свежо), потом вопросы из конфига. */
 function askScenario(c){
   const qs = [];
-  const dead = c.counted.filter(e => !e.dup && MISS[e.kind]);   // до выполнения задания; masked — тоже промах
-  if (c.sc.misclick_followup !== false && dead.length){
-    const d = dead[0];
+  if (c.missPick){
+    const d = c.missPick.tap;
     qs.push({id: c.sc.id + '_MISS', hyp: (c.sc.hypotheses || []).join(','), type: 'text', auto: 'misclick',
       text: 'В этом задании вы нажали в отмеченное место. Что вы ожидали там найти или сделать?',
       image: {screen: d.screen, overlay: d.overlay}, mark: {x: d.x, y: d.y}, tap_ref: d.n});
@@ -1201,6 +1245,7 @@ function askScenario(c){
   });
 }
 
+const ACCIDENTAL = 'Нажал(а) случайно';   // ответ кнопки в вопросе по промаху (в Answers — accidental = true)
 function runQuestions(qs, c, done){
   let i = 0;
   const next = () => { if (i >= qs.length) return done(); askOne(qs[i], c, i, qs.length, () => { i++; next(); }); };
@@ -1211,7 +1256,8 @@ function askOne(q, c, i, n, ok){
   const head = c ? '<div class="ut-step">Задание ' + (c.idx + 1) + ' · вопрос ' + (i + 1) + ' из ' + n + '</div>' : '<div class="ut-step">Вопрос ' + (i + 1) + ' из ' + n + '</div>';
   showPanel(head + '<h2>' + esc(q.text) + '</h2><div id="ut-body"></div>' +
     (q.recall && c ? '<button class="ut-link" id="ut-recall">Показать экраны, которые вы прошли</button><div id="ut-strip"></div>' : '') +
-    '<div class="ut-row"><button class="ut-main" id="ut-next">Дальше</button>' + (q.optional ? '<button class="ut-alt" id="ut-skip">Пропустить</button>' : '') + '</div>');
+    '<div class="ut-row"><button class="ut-main" id="ut-next">Дальше</button>' + (q.optional ? '<button class="ut-alt" id="ut-skip">Пропустить</button>' : '') +
+    (q.auto === 'misclick' ? '<button class="ut-alt" id="ut-acc">' + ACCIDENTAL + '</button>' : '') + '</div>');
   const body = document.getElementById('ut-body');
   const t0 = performance.now();
   let value = null, extra = {};
@@ -1266,6 +1312,8 @@ function askOne(q, c, i, n, ok){
     save(value == null);
   };
   const sk = document.getElementById('ut-skip'); if (sk) sk.onclick = () => save(true);
+  // вопрос по промаху: быстрый выход для случайного тапа — без придуманного задним числом ответа (оператор 13.11.2026)
+  const acc = document.getElementById('ut-acc'); if (acc) acc.onclick = () => { value = ACCIDENTAL; extra.accidental = true; save(false); };
 }
 
 function outro(){

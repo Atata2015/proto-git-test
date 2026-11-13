@@ -16,11 +16,15 @@
     "title": "Prototype_2",
     "feature_title": "Рекомендованные задания"
   },
-  "version": 4,
+  "report": {
+    "updated_at": "2026-11-12T15:25:59.134+00:00",
+    "size": 1442308
+  },
+  "version": 5,
   "created_at": "2026-11-10T12:37:19.909+00:00",
-  "updated_at": "2026-11-12T13:58:30.223+00:00",
-  "sha256": "a83b2d34c03c70dda042ede252101d7a9fec4033b998a34fe7ea06d56129dcad",
-  "size": 3887487,
+  "updated_at": "2026-11-13T07:55:30.414+00:00",
+  "sha256": "17cfd592d5ab9fd998e207981e5e25d6a878f1ed460b3c089ab98d78847d9980",
+  "size": 3891952,
   "history": [
     {
       "status": "draft",
@@ -30,9 +34,5 @@
       "status": "pilot",
       "at": "2026-11-10T12:39:33.317+00:00"
     }
-  ],
-  "report": {
-    "updated_at": "2026-11-12T15:25:59.134+00:00",
-    "size": 1442308
-  }
+  ]
 }
