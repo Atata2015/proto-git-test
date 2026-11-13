@@ -624,18 +624,25 @@ function blockedBy(m){
 }
 function showDone(){ showPanel('<h2>Вы уже прошли этот тест</h2><p class="ut-muted">Спасибо за участие! Проходить его ещё раз не нужно.</p>'); }
 const showBlocked = why => why === 'closed' ? showClosed() : showDone();
-/* ---------- Восстановление сессии после перезагрузки страницы ----------
-   Снимок (SKEY) пишется на старте и после каждого задания с его вопросами: session, summaries, answers, events, номер
-   следующего задания. Внутри задания ничего не храним: задание, прерванное перезагрузкой, начинается с карточки заново,
-   его данные не отправлялись. При открытии свежий снимок (SNAP_TTL_MS и до close_at; та же сборка теста) предлагает
-   «Продолжить / Начать заново». Продолжение — тот же session_id, reloads + 1, сообщение resume. Только этот браузер. */
+/* ---------- Восстановление сессии после перезагрузки страницы (оператор 13.11.2026) ----------
+   Снимок (SKEY): session, summaries, answers, events, next — карточка следующего задания, at — где остановились:
+     null — на карточке задания next; {task} — внутри задания; {q, qs, from, visited} — на вопросе from задания q;
+     {final} — на финальном вопросе final.
+   Пишется на старте, на старте задания, перед вопросами и после каждого ответа; на финале удаляется.
+   «Продолжить» ведёт туда, где остановились: вопросы — с первого неотвеченного (задание уже выполнено, его метрики
+   посчитаны), карточка — на неё; внутри задания — задание заново с карточки (состояние прототипа и время не
+   восстановить; данные прерванной попытки не отправлялись; в сводке after_reload). Тот же session_id, reloads + 1,
+   сообщение resume, событие reload в задании, на вопросах которого прервали.
+   Не восстанавливаем: снимок старше SNAP_TTL_MS, после close_at, другая сборка теста (BUILD) или формат снимка (SNAP_FMT).
+   Только этот браузер. */
 const SKEY = 'ut_sess_' + C.test_id;
 const SNAP_TTL_MS = 24 * 3600 * 1000;
+const SNAP_FMT = 2;
 const hashStr = t => { let h = 5381; for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
 const BUILD = hashStr(JSON.stringify(C)) + '.' + ((C.prototype && C.prototype.version) || '');
-let reloadIdx = -1;   // задание, начатое заново после перезагрузки
-function saveSnap(next){
-  try { localStorage.setItem(SKEY, JSON.stringify({build: BUILD, saved_at: Date.now(), next, session, summaries, answers, events})); } catch (e) {}
+let reloadIdx = -1;   // задание, прерванное перезагрузкой и начатое заново
+function saveSnap(next, at){
+  try { localStorage.setItem(SKEY, JSON.stringify({fmt: SNAP_FMT, build: BUILD, saved_at: Date.now(), next, at: at || null, session, summaries, answers, events})); } catch (e) {}
 }
 function clearSnap(){ try { localStorage.removeItem(SKEY); } catch (e) {} }
 function loadSnap(){
@@ -643,7 +650,10 @@ function loadSnap(){
   try { sn = JSON.parse(localStorage.getItem(SKEY) || 'null'); } catch (e) {}
   if (!sn) return null;
   const closed = C.close_at && new Date() > new Date(C.close_at);
-  if (sn.build !== BUILD || !sn.session || Date.now() - sn.saved_at > SNAP_TTL_MS || closed || !(sn.next >= 0) || sn.session.test_id !== C.test_id){ clearSnap(); return null; }
+  const at = sn.at || {};
+  const okAt = at.q == null || (!!C.scenarios[at.q] && Array.isArray(at.qs) && at.from >= 0 && at.from < at.qs.length);
+  if (sn.fmt !== SNAP_FMT || sn.build !== BUILD || !sn.session || Date.now() - sn.saved_at > SNAP_TTL_MS || closed
+      || !(sn.next >= 0 && sn.next <= C.scenarios.length) || sn.session.test_id !== C.test_id || !okAt){ clearSnap(); return null; }
   return sn;
 }
 function markDone(){ const d = lsGet(DKEY); d.push({at: session.finished_at, stage: session.stage, session_id: session.session_id}); lsSet(DKEY, d); }
@@ -1157,12 +1167,18 @@ async function ensureFullscreen(){
 
 /* ---------- Шаги ---------- */
 function resumePanel(sn){
-  const fin = sn.next >= C.scenarios.length;
-  showPanel('<h2>Тест не завершён</h2><p>Страница была перезагружена. Ваши ответы сохранены — можно продолжить' +
-    (fin ? ' с последних вопросов.' : ' с задания ' + (sn.next + 1) + ' из ' + C.scenarios.length + '. Текущее задание начнётся заново.') + '</p>' +
+  const at = sn.at || {}, N = C.scenarios.length;
+  const where = at.q != null ? 'с вопроса ' + (at.from + 1) + ' из ' + at.qs.length + ' к заданию ' + (at.q + 1) + '.'
+    : at.final != null || sn.next >= N ? 'с последних вопросов.'
+    : at.task != null ? 'с задания ' + (at.task + 1) + ' из ' + N + '. Задание начнётся заново.'
+    : 'с задания ' + (sn.next + 1) + ' из ' + N + '.';
+  showPanel('<h2>Тест не завершён</h2><p>Страница была перезагружена. Ваши ответы сохранены — можно продолжить ' + where + '</p>' +
     '<div class="ut-row"><button class="ut-main" id="ut-resume">Продолжить</button><button class="ut-alt" id="ut-fresh">Начать заново</button></div>');
   document.getElementById('ut-fresh').onclick = () => { clearSnap(); start(); };
-  document.getElementById('ut-resume').onclick = async () => {
+  const btn = document.getElementById('ut-resume');
+  btn.onclick = async () => {
+    if (btn.dataset.busy) return;                      // двойной тап, пока ждём каталог и полноэкранный режим: восстановить один раз
+    btn.dataset.busy = '1';
     const why = blockedBy(await metaReady);
     if (why) return showBlocked(why);
     Object.assign(session, sn.session, {stage: session.stage, prev_done: session.prev_done, reloads: (sn.session.reloads || 0) + 1});
@@ -1170,10 +1186,22 @@ function resumePanel(sn){
     await ensureFullscreen();
     testOn = true;
     session.env = env(); lastEnv = envStr(session.env);
-    reloadIdx = sn.next;
-    saveSnap(sn.next);
+    saveSnap(sn.next, sn.at);                          // reloads + 1 — в снимок сразу
     enqueue('resume', {scenario: 'r' + session.reloads}).then(() => { if (sendState.closed) showClosed(); });
-    if (fin) outro(); else taskCard(sn.next);
+    if (at.q != null){                                 // вопросы выполненного задания — с первого неотвеченного
+      const sc = C.scenarios[at.q];
+      const evs = events.filter(e => e.scenario === sc.id && e.t != null);
+      const tLast = evs.length ? Math.max(...evs.map(e => e.t)) : 0;   // время сценария продолжается с последнего события
+      const c = {sc, idx: at.q, visited: at.visited || [], done: true, t0: now() - tLast, counted: [],
+                 summary: summaries.filter(x => x.scenario === sc.id).pop()};
+      cur = c;
+      events.push({type: 'reload', scenario: sc.id, t: tLast});
+      scenarioQuestions(c, at.qs, at.from);
+    } else if (at.final != null || sn.next >= N) outro(at.final || 0);
+    else {
+      if (at.task != null) reloadIdx = at.task;        // задание прервано внутри — заново, в сводке after_reload
+      taskCard(sn.next);
+    }
   };
 }
 
@@ -1194,7 +1222,7 @@ function start(){
     await ensureFullscreen();
     testOn = true;
     session.env = env(); lastEnv = envStr(session.env);
-    saveSnap(0);
+    saveSnap(0, null);
     enqueue('start', {}).then(() => { if (sendState.closed) showClosed(); });   // приёмник закрыл тест раньше close_at в HTML
     taskCard(0);
   };
@@ -1218,6 +1246,7 @@ function taskCard(idx){
 
 function runScenario(idx){
   const sc = C.scenarios[idx];
+  saveSnap(idx, {task: idx});                          // перезагрузка внутри задания — задание заново
   P.reset(sc.start || SPEC.start);
   cur = {sc, idx, t0: now(), taps: [], visited: [P.screen], done: false, result: null, env_changes: 0,
          finish: finishMode(sc), reached: null, masked_scrolls: 0, viewT: 0,   // viewT — когда показан текущий экран/оверлей (для reflex)
@@ -1322,20 +1351,26 @@ function askScenario(c){
       image: {screen: op.screen, overlay: op.overlay}, mark: {x: op.x, y: op.y}, tap_ref: op.n});
   }
   (c.sc.questions || []).forEach(q => qs.push(q));
+  scenarioQuestions(c, qs, 0);
+}
+/* Вопросы задания с вопроса from (после перезагрузки — с первого неотвеченного); снимок — перед вопросом и после ответа. */
+function scenarioQuestions(c, qs, from){
+  const snap = i => saveSnap(c.idx, {q: c.idx, qs, from: i, visited: c.visited});
+  if (from < qs.length) snap(from);
   runQuestions(qs, c, () => {
     enqueue('scenario', {scenario: c.sc.id, summary: c.summary,
       events: events.filter(e => e.scenario === c.sc.id),
       answers: answers.filter(a => a.scenario === c.sc.id)});
     cur = null;
-    saveSnap(c.idx + 1);
+    saveSnap(c.idx + 1, null);
     if (c.idx + 1 < C.scenarios.length) taskCard(c.idx + 1); else outro();
-  });
+  }, from, i => { if (i < qs.length) snap(i); });
 }
 
 const ACCIDENTAL = 'Нажал(а) случайно';   // ответ кнопки в вопросе по промаху (в Answers — accidental = true)
-function runQuestions(qs, c, done){
-  let i = 0;
-  const next = () => { if (i >= qs.length) return done(); askOne(qs[i], c, i, qs.length, () => { i++; next(); }); };
+function runQuestions(qs, c, done, from, onStep){
+  let i = from || 0;
+  const next = () => { if (i >= qs.length) return done(); askOne(qs[i], c, i, qs.length, () => { i++; if (onStep) onStep(i); next(); }); };
   next();
 }
 
@@ -1404,8 +1439,10 @@ function askOne(q, c, i, n, ok){
   const acc = document.getElementById('ut-acc'); if (acc) acc.onclick = () => { value = ACCIDENTAL; extra.accidental = true; save(false); };
 }
 
-function outro(){
+function outro(from){
   const qs = (C.outro && C.outro.questions) || [];
+  const N = C.scenarios.length;
+  if ((from || 0) < qs.length) saveSnap(N, {final: from || 0});
   runQuestions(qs, null, async () => {
     session.finished_at = new Date().toISOString();
     markDone(); clearSnap();
@@ -1419,7 +1456,7 @@ function outro(){
         const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = session.session_id + '.json'; a.click();
       };
     } else finishPanel();
-  });
+  }, from || 0, i => { if (i < qs.length) saveSnap(N, {final: i}); });
 }
 
 /* Итог отправки: всё доставлено — спасибо; тест закрыт; ошибка настройки; нет сети / сбой — «Повторить». */
