@@ -11,7 +11,7 @@
   Публикатор (UserTests-Pipeline, skills/user-test/scripts/publish_test.py) заменяет единственную метку данных
   внутри <script id="tests-data"> на JSON с данными страницы, заменив в JSON каждое "</" на "<\/". Вся вёрстка — здесь.
   Вид повторяет общий шаблон каталога (_templates/index-template.html); CSS вкладок совпадает с вставкой ut-tabs в нём.
-  Шаблон-версия: 3
+  Шаблон-версия: 4
 -->
 <style>
 :root{--bg:#f6f6f4;--card:#fff;--ink:#1d1d1b;--muted:#6b6b66;--line:#e3e2dd;--accent:#3355ff;--chip:#eef0ff;
@@ -43,7 +43,7 @@ h1{font-size:28px;line-height:1.2;margin:0 0 6px}.lead{color:var(--muted);margin
 </head>
 <body>
 <main id="app"><noscript><p class="noscript">Для просмотра страницы включите JavaScript.</p></noscript></main>
-<script id="tests-data" type="application/json">{"schema":2,"catalog_title":"Прототипы (тест)","link_style":"dir","generated_at":"2026-11-17T16:19:46.132+00:00","page":"tests-feature","feature":"recommended-tasks-ut","features":[{"slug":"recommended-tasks-ut","title":"Рекомендованные задания (юзер-тест)","description":"Рекомендованные задания (OneState) для юзер-теста: планшет с заданиями, отслеживание на HUD, прогресс по задачам и целям.","created_at":"2026-11-16T09:27:07.440+00:00","updated_at":"2026-11-16T09:27:07.440+00:00","tests":[{"title":"Рекомендованные задания","status":"closed","mode":"shared","demo":false,"scenarios":6,"prototype":{"feature":"recommended-tasks-ut","prototype":"prototype-2","version":1,"in_catalog":true,"title":"Prototype_2","feature_title":"Рекомендованные задания (юзер-тест)"},"report":{"updated_at":"2026-11-17T09:31:34.726+00:00","size":7026687},"created_at":"2026-11-16T09:27:07.440+00:00","updated_at":"2026-11-17T08:40:47.421+00:00","version":1,"slug":"recommended-tasks-01"},{"title":"Рекомендованные задания","status":"draft","mode":"shared","demo":false,"scenarios":6,"prototype":{"feature":"recommended-tasks-ut","prototype":"prototype-2","version":1,"in_catalog":true,"title":"Prototype_2","feature_title":"Рекомендованные задания (юзер-тест)"},"created_at":"2026-11-17T16:05:02.773+00:00","updated_at":"2026-11-17T16:19:45.465+00:00","version":1,"slug":"recommended-tasks-02"}]}]}</script>
+<script id="tests-data" type="application/json">{"schema":2,"catalog_title":"Прототипы (тест)","link_style":"dir","generated_at":"2026-11-18T10:04:39.981+00:00","page":"tests-feature","feature":"recommended-tasks-ut","features":[{"slug":"recommended-tasks-ut","title":"Рекомендованные задания (юзер-тест)","description":"Рекомендованные задания (OneState) для юзер-теста: планшет с заданиями, отслеживание на HUD, прогресс по задачам и целям.","created_at":"2026-11-16T09:27:07.440+00:00","updated_at":"2026-11-16T09:27:07.440+00:00","tests":[{"title":"Рекомендованные задания","status":"closed","mode":"shared","demo":false,"scenarios":6,"prototype":{"feature":"recommended-tasks-ut","prototype":"prototype-2","version":1,"in_catalog":true,"title":"Prototype_2","feature_title":"Рекомендованные задания (юзер-тест)"},"report":{"updated_at":"2026-11-18T10:04:39.301+00:00","size":7235539},"created_at":"2026-11-16T09:27:07.440+00:00","updated_at":"2026-11-17T08:40:47.421+00:00","version":1,"slug":"recommended-tasks-01"},{"title":"Рекомендованные задания","status":"draft","mode":"shared","demo":false,"scenarios":6,"prototype":{"feature":"recommended-tasks-ut","prototype":"prototype-2","version":1,"in_catalog":true,"title":"Prototype_2","feature_title":"Рекомендованные задания (юзер-тест)"},"created_at":"2026-11-17T16:05:02.773+00:00","updated_at":"2026-11-17T16:19:45.465+00:00","version":1,"slug":"recommended-tasks-02"}]}]}</script>
 <script>
 (function () {
   "use strict";
@@ -150,6 +150,7 @@ h1{font-size:28px;line-height:1.2;margin:0 0 6px}.lead{color:var(--muted);margin
       var row = el("div", "row");
       var open = el("a", "btn", "Открыть тест"); open.href = href(t.slug); row.appendChild(open);
       if (t.report) { var rep = el("a", "btn btn2", "Отчёт"); rep.href = t.slug + "/report.html"; row.appendChild(rep); }
+      if (t.report_full) { var full = el("a", "btn btn2", "Полный отчёт"); full.href = t.slug + "/report.full.html"; row.appendChild(full); }
       card.appendChild(row);
       app.appendChild(card);
     });

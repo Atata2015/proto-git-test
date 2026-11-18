@@ -11,7 +11,7 @@
   Публикатор (UserTests-Pipeline, skills/user-test/scripts/publish_test.py) заменяет единственную метку данных
   внутри <script id="tests-data"> на JSON с данными страницы, заменив в JSON каждое "</" на "<\/". Вся вёрстка — здесь.
   Вид повторяет общий шаблон каталога (_templates/index-template.html); CSS вкладок совпадает с вставкой ut-tabs в нём.
-  Шаблон-версия: 3
+  Шаблон-версия: 4
 -->
 <style>
 :root{--bg:#f6f6f4;--card:#fff;--ink:#1d1d1b;--muted:#6b6b66;--line:#e3e2dd;--accent:#3355ff;--chip:#eef0ff;
@@ -150,6 +150,7 @@ h1{font-size:28px;line-height:1.2;margin:0 0 6px}.lead{color:var(--muted);margin
       var row = el("div", "row");
       var open = el("a", "btn", "Открыть тест"); open.href = href(t.slug); row.appendChild(open);
       if (t.report) { var rep = el("a", "btn btn2", "Отчёт"); rep.href = t.slug + "/report.html"; row.appendChild(rep); }
+      if (t.report_full) { var full = el("a", "btn btn2", "Полный отчёт"); full.href = t.slug + "/report.full.html"; row.appendChild(full); }
       card.appendChild(row);
       app.appendChild(card);
     });
