@@ -1,0 +1,28 @@
+{
+  "test_id": "gamehub-01-demo",
+  "feature": "gamehub",
+  "title": "Gamehub — демо (без записи)",
+  "status": "draft",
+  "mode": "shared",
+  "demo": true,
+  "scenarios": 6,
+  "prototype": {
+    "feature": "gamehub",
+    "prototype": "gamehub-fulltest-1",
+    "version": 2,
+    "in_catalog": true,
+    "title": "Gamehub_FullTest_1",
+    "feature_title": "Gamehub"
+  },
+  "version": 1,
+  "created_at": "2026-11-19T14:15:43.065+00:00",
+  "updated_at": "2026-11-19T14:15:43.065+00:00",
+  "sha256": "1687068a2694f33c2788d246a0ed4f039050a22cff50ddc1db54a41cc00368ba",
+  "size": 3571255,
+  "history": [
+    {
+      "status": "draft",
+      "at": "2026-11-19T14:15:43.065+00:00"
+    }
+  ]
+}
