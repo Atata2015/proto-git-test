@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-11-19T07:48:40.638+00:00",
+  "title": "Gamehub_FullTest_1",
+  "feature": "gamehub",
+  "prototype": "gamehub-fulltest-1",
+  "version": 1,
+  "updated_at": "2026-11-19T07:48:40.638+00:00",
+  "sha256": "94166b41dd9bb4c3f48a879e99d0bc0c29a13e4dc7e1a02d80b25367bd053f50",
+  "size": 3402748,
+  "description": "Gamehub (OneState): лента ежедневных и еженедельных заданий и целей, отслеживание задания на HUD, выполнение и получение награды.",
+  "figma_url": "https://www.figma.com/design/5xwdEKxqLM6H9DbqfvGwu3/-SYSTEM--UI-Kit--Test-?node-id=4801-5793"
+}
