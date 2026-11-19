@@ -2,7 +2,7 @@
   "test_id": "gamehub-01",
   "feature": "gamehub",
   "title": "Gamehub",
-  "status": "draft",
+  "status": "pilot",
   "mode": "shared",
   "demo": false,
   "endpoint": "https://script.google.com/macros/s/AKfycbzdO-bBaLGWyMNOub8NUtQcFH6Esfj6h8TtMNtH-Iqel0TVFU7FUFgBjuuTcbtEhl8IGw/exec",
@@ -17,13 +17,17 @@
   },
   "version": 2,
   "created_at": "2026-11-19T09:53:18.120+00:00",
-  "updated_at": "2026-11-19T10:12:49.995+00:00",
+  "updated_at": "2026-11-19T10:38:03.518+00:00",
   "sha256": "32dd6d990a9954d6530fd45c30b537ae9b287c3ab0fbb9971bbd198ce4cc004b",
   "size": 3570830,
   "history": [
     {
       "status": "draft",
       "at": "2026-11-19T09:53:18.120+00:00"
+    },
+    {
+      "status": "pilot",
+      "at": "2026-11-19T10:38:03.518+00:00"
     }
   ]
 }
