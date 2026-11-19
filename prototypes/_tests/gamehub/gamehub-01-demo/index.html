@@ -375,6 +375,9 @@ showFS();
 <!-- ut-shell:begin -->
 <style>
 /* Оболочка юзер-теста */
+/* Safari на iPhone в горизонтальной ориентации сам увеличивает текст абзацев и списков (подсказки крупнее задания,
+   кнопки и поле ввода — нет). Свойство наследуется от html — хватает оболочки, движок прототипа не трогаем (F-27) */
+html.ut{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 html.ut #fs{display:none!important}
 html.ut-panel #rotate{display:none!important}
 #ut{--ut-bg:#15161a;--ut-card:#1f2127;--ut-fg:#eceef2;--ut-muted:#9aa0ab;--ut-acc:#f5d33a;--ut-line:#343741;
@@ -385,7 +388,7 @@ html.ut-panel #ut-panel{display:block}
 /* Своя полоска прокрутки и стрелка «ниже есть ещё» (системная на телефоне видна только во время прокрутки) */
 #ut-panel{scrollbar-width:none}
 #ut-panel::-webkit-scrollbar{display:none}
-#ut-sb{position:fixed;right:max(3px,env(safe-area-inset-right));width:5px;z-index:201;pointer-events:none;display:none}
+#ut-sb{position:fixed;right:3px;width:5px;z-index:201;pointer-events:none;display:none}
 #ut-sb.on{display:block}
 #ut-sb::before{content:"";position:absolute;left:0;right:0;top:6px;bottom:6px;border-radius:3px;background:rgba(255,255,255,.10)}
 #ut-sb i{position:absolute;left:0;top:0;width:100%;border-radius:3px;background:rgba(255,255,255,.55)}
@@ -415,7 +418,7 @@ html.ut-panel #ut-panel{display:block}
 #ut-sheet{max-height:calc(100vh - 24px);overflow-y:auto;overscroll-behavior:contain}   /* с развёрнутым «Как проходить» в альбомной ориентации — прокрутка всего окна */
 .ut-info .ut-tips{color:var(--ut-fg)}
 .ut-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px}
-#ut button{font:600 15px/1.2 inherit;font-family:inherit;border:0;border-radius:12px;cursor:pointer}
+#ut button{font-family:inherit;font-size:15px;font-weight:600;line-height:1.2;border:0;border-radius:12px;cursor:pointer}
 .ut-main{background:var(--ut-acc);color:#1a1a1a;padding:13px 22px;min-height:44px}
 #ut-panel .ut-main:only-child,.ut-card>.ut-main{margin-top:16px}
 /* Окно «Развернуть на весь экран» (полноэкранный режим потерян): затемнение и кнопка, выше всего */
@@ -427,14 +430,14 @@ html.ut-panel #ut-panel{display:block}
 /* «Нажал(а) случайно» — над полем ответа, кнопка с обводкой (оператор 13.11.2026: серую надпись рядом с «Дальше» не заметили) */
 #ut .ut-acc{display:block;margin-top:10px;background:transparent;color:var(--ut-fg);border:1.5px solid var(--ut-muted);padding:11px 18px;min-height:44px}
 .ut-lbl{display:block;margin-top:14px;color:var(--ut-muted);font-size:13px}
-#ut input,#ut textarea{display:block;width:100%;margin-top:6px;background:var(--ut-card);color:var(--ut-fg);border:1px solid var(--ut-line);border-radius:10px;padding:11px 12px;font:16px/1.4 inherit;font-family:inherit}
+#ut input,#ut textarea{display:block;width:100%;margin-top:6px;background:var(--ut-card);color:var(--ut-fg);border:1px solid var(--ut-line);border-radius:10px;padding:11px 12px;font-family:inherit;font-size:16px;line-height:1.4}   /* не меньше 16px: иначе Safari приближает страницу при вводе */
 #ut input.err{border-color:#e5484d}
 #ut textarea{resize:vertical;margin-top:10px}
 .ut-opts{display:flex;flex-direction:column;gap:8px}
 .ut-opts button{background:var(--ut-card);color:var(--ut-fg);border:1px solid var(--ut-line)!important;padding:12px 14px;text-align:left;min-height:44px;font-weight:500!important}
 .ut-opts button.sel{border-color:var(--ut-acc)!important;box-shadow:inset 0 0 0 1px var(--ut-acc)}
 .ut-opts.scale{flex-direction:row}
-.ut-opts.scale button{flex:1;text-align:center;padding:12px 0}
+#ut .ut-opts.scale button{flex:1;text-align:center;padding:12px 0;font-size:18px;min-height:48px}
 .ut-scale-l{display:flex;justify-content:space-between;color:var(--ut-muted);font-size:12px;margin-top:6px}
 .ut-frame{position:relative;width:100%;max-width:calc(78vh * var(--ut-ar,2.17));border-radius:8px;overflow:hidden;background:#000;margin:4px 0 6px}
 .ut-frame.zoomable{cursor:zoom-in}
@@ -473,6 +476,8 @@ html.ut-tb-task #ut-pill,html.ut-tb-done #ut-done{display:none!important}
   background:var(--ut-card);border:1px solid var(--ut-line);border-radius:14px;padding:14px 16px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
 #ut-sheet.on{display:block}
 .ut-task{font-size:16px;font-weight:600}
+.ut-ios{margin:0 0 12px;padding:10px 12px;border:1px solid var(--ut-line);border-radius:10px;color:var(--ut-muted);font-size:14px}
+.ut-ios b{color:var(--ut-fg);font-weight:600}
 #ut-toast{position:fixed;left:50%;bottom:calc(max(24px,env(safe-area-inset-bottom)) + 66px);transform:translate(-50%,20px);opacity:0;z-index:170;background:#2bb673;color:#fff;font-weight:600;padding:12px 22px;border-radius:0;transition:.25s;pointer-events:none}
 /* finish: auto — пауза после выполнения: прототип заблокирован, на месте плашки — кнопка «К вопросам» */
 #ut-block{position:fixed;inset:0;z-index:145;display:none}
@@ -1271,11 +1276,21 @@ function resumePanel(sn){
   };
 }
 
+/* iPhone, Safari: полноэкранного режима у страницы нет (requestFullscreen нет) — на стартовом экране подсказка, как скрыть
+   панели вручную (F-31, 19.11.2026). Меню в адресной строке выглядит по-разному в разных версиях iOS, отсюда варианты значка.
+   В других браузерах на iPhone (Chrome, Firefox, Edge…) такого пункта нет — подсказки нет. */
+function iosSafariHint(){
+  const ua = navigator.userAgent;
+  if (!/iPhone|iPod/.test(ua) || !/Safari/.test(ua) || /CriOS|FxiOS|EdgiOS|OPiOS|YaBrowser|GSA\//.test(ua) || navigator.standalone) return '';
+  return '<p class="ut-ios"><b>На iPhone:</b> чтобы прототип занял весь экран, скройте панели Safari — нажмите значок меню '
+    + 'в адресной строке («aA», «⋯» или значок страницы) и выберите «Скрыть панель инструментов».</p>';
+}
+
 function start(){
   const sn = loadSnap();
   if (sn) return resumePanel(sn);
   const it = C.intro || {};
-  showPanel('<h1>' + esc(it.title || 'Тест') + '</h1>' + para(it.text || '') +
+  showPanel('<h1>' + esc(it.title || 'Тест') + '</h1>' + iosSafariHint() + para(it.text || '') +
     (it.ask_name ? '<label class="ut-lbl">Ваше имя или ник в Slack<input id="ut-name" autocomplete="off"></label>' : '') +
     '<button class="ut-main" id="ut-go">Начать</button>');
   const goBtn = document.getElementById('ut-go'), nm = document.getElementById('ut-name');
