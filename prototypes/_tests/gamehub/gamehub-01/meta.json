@@ -6,7 +6,7 @@
   "mode": "shared",
   "demo": false,
   "endpoint": "https://script.google.com/macros/s/AKfycbzdO-bBaLGWyMNOub8NUtQcFH6Esfj6h8TtMNtH-Iqel0TVFU7FUFgBjuuTcbtEhl8IGw/exec",
-  "scenarios": 5,
+  "scenarios": 6,
   "prototype": {
     "feature": "gamehub",
     "prototype": "gamehub-fulltest-1",
@@ -15,11 +15,11 @@
     "title": "Gamehub_FullTest_1",
     "feature_title": "Gamehub"
   },
-  "version": 2,
+  "version": 3,
   "created_at": "2026-11-19T09:53:18.120+00:00",
-  "updated_at": "2026-11-19T10:38:03.518+00:00",
-  "sha256": "32dd6d990a9954d6530fd45c30b537ae9b287c3ab0fbb9971bbd198ce4cc004b",
-  "size": 3570830,
+  "updated_at": "2026-11-19T10:58:47.156+00:00",
+  "sha256": "e52dfb418214b615540fe14180353710862e717f4d5671e18084086e3ebb6d87",
+  "size": 3571348,
   "history": [
     {
       "status": "draft",
