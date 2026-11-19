@@ -15,11 +15,11 @@
     "title": "Gamehub_FullTest_1",
     "feature_title": "Gamehub"
   },
-  "version": 3,
+  "version": 4,
   "created_at": "2026-11-19T09:53:18.120+00:00",
-  "updated_at": "2026-11-19T10:58:47.156+00:00",
-  "sha256": "e52dfb418214b615540fe14180353710862e717f4d5671e18084086e3ebb6d87",
-  "size": 3571348,
+  "updated_at": "2026-11-19T11:13:39.633+00:00",
+  "sha256": "25d8086c4b9ba998543e012f942eccc53319b84ae74f703bb7328b5327c1a885",
+  "size": 3571294,
   "history": [
     {
       "status": "draft",
