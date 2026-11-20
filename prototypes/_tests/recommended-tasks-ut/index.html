@@ -11,7 +11,7 @@
   Публикатор (UserTests-Pipeline, skills/user-test/scripts/publish_test.py) заменяет единственную метку данных
   внутри <script id="tests-data"> на JSON с данными страницы, заменив в JSON каждое "</" на "<\/". Вся вёрстка — здесь.
   Вид повторяет общий шаблон каталога (_templates/index-template.html); CSS вкладок совпадает с вставкой ut-tabs в нём.
-  Шаблон-версия: 4
+  Шаблон-версия: 5
 -->
 <style>
 :root{--bg:#f6f6f4;--card:#fff;--ink:#1d1d1b;--muted:#6b6b66;--line:#e3e2dd;--accent:#3355ff;--chip:#eef0ff;
@@ -38,12 +38,16 @@ h1{font-size:28px;line-height:1.2;margin:0 0 6px}.lead{color:var(--muted);margin
 .st-draft,.st-closed{background:var(--draft-bg);color:var(--draft)}
 .empty{color:var(--muted)}footer{margin-top:32px;font-size:12px;color:var(--muted)}
 .noscript{color:var(--muted)}
+.post{margin-top:12px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--bg)}
+.post-text{margin:0;white-space:pre-wrap;word-break:break-word;font:inherit;font-size:15px}
+.post .row{margin-top:10px;align-items:center}.post-ok{font-size:13px;color:var(--muted)}
+button.btn{border:0;cursor:pointer;font-family:inherit;line-height:1.5}
 .ut-tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:4px 0 16px}.ut-tab{flex:1;text-align:center;padding:10px 12px;font-size:16px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;text-decoration:none}a.ut-tab:hover{color:var(--ink);text-decoration:none}.ut-tab.on{color:var(--ink);border-bottom-color:var(--accent)}
 </style>
 </head>
 <body>
 <main id="app"><noscript><p class="noscript">Для просмотра страницы включите JavaScript.</p></noscript></main>
-<script id="tests-data" type="application/json">{"schema":2,"catalog_title":"Прототипы (тест)","link_style":"dir","generated_at":"2026-11-18T14:23:35.923+00:00","page":"tests-feature","feature":"recommended-tasks-ut","features":[{"slug":"recommended-tasks-ut","title":"Рекомендованные задания (юзер-тест)","description":"Рекомендованные задания (OneState) для юзер-теста: планшет с заданиями, отслеживание на HUD, прогресс по задачам и целям.","created_at":"2026-11-16T09:27:07.440+00:00","updated_at":"2026-11-16T09:27:07.440+00:00","tests":[{"title":"Рекомендованные задания","status":"closed","mode":"shared","demo":false,"scenarios":6,"prototype":{"feature":"recommended-tasks-ut","prototype":"prototype-2","version":1,"in_catalog":true,"title":"Prototype_2","feature_title":"Рекомендованные задания (юзер-тест)"},"report":{"updated_at":"2026-11-18T10:04:39.301+00:00","size":7235539},"report_full":{"updated_at":"2026-11-18T10:05:22.386+00:00","size":7268179},"created_at":"2026-11-16T09:27:07.440+00:00","updated_at":"2026-11-17T08:40:47.421+00:00","version":1,"slug":"recommended-tasks-01"},{"title":"Рекомендованные задания","status":"closed","mode":"shared","demo":false,"scenarios":6,"prototype":{"feature":"recommended-tasks-ut","prototype":"prototype-2","version":1,"in_catalog":true,"title":"Prototype_2","feature_title":"Рекомендованные задания (юзер-тест)"},"created_at":"2026-11-17T16:05:02.773+00:00","updated_at":"2026-11-18T14:23:34.961+00:00","version":1,"slug":"recommended-tasks-02"}]}]}</script>
+<script id="tests-data" type="application/json">{"schema":2,"catalog_title":"Прототипы (тест)","link_style":"dir","generated_at":"2026-11-20T08:21:49.955+00:00","page":"tests-feature","feature":"recommended-tasks-ut","features":[{"slug":"recommended-tasks-ut","title":"Рекомендованные задания (юзер-тест)","description":"Рекомендованные задания (OneState) для юзер-теста: планшет с заданиями, отслеживание на HUD, прогресс по задачам и целям.","created_at":"2026-11-16T09:27:07.440+00:00","updated_at":"2026-11-16T09:27:07.440+00:00","tests":[{"title":"Рекомендованные задания","status":"closed","mode":"shared","demo":false,"scenarios":6,"prototype":{"feature":"recommended-tasks-ut","prototype":"prototype-2","version":1,"in_catalog":true,"title":"Prototype_2","feature_title":"Рекомендованные задания (юзер-тест)"},"report":{"updated_at":"2026-11-18T10:04:39.301+00:00","size":7235539},"report_full":{"updated_at":"2026-11-18T10:05:22.386+00:00","size":7268179},"created_at":"2026-11-16T09:27:07.440+00:00","updated_at":"2026-11-17T08:40:47.421+00:00","version":1,"slug":"recommended-tasks-01"},{"title":"Рекомендованные задания","status":"closed","mode":"shared","demo":false,"scenarios":6,"prototype":{"feature":"recommended-tasks-ut","prototype":"prototype-2","version":1,"in_catalog":true,"title":"Prototype_2","feature_title":"Рекомендованные задания (юзер-тест)"},"created_at":"2026-11-17T16:05:02.773+00:00","updated_at":"2026-11-18T14:23:34.961+00:00","version":1,"slug":"recommended-tasks-02"}]}]}</script>
 <script>
 (function () {
   "use strict";
@@ -152,9 +156,42 @@ h1{font-size:28px;line-height:1.2;margin:0 0 6px}.lead{color:var(--muted);margin
       if (t.report) { var rep = el("a", "btn btn2", "Отчёт"); rep.href = t.slug + "/report.html"; row.appendChild(rep); }
       if (t.report_full) { var full = el("a", "btn btn2", "Полный отчёт"); full.href = t.slug + "/report.full.html"; row.appendChild(full); }
       card.appendChild(row);
+      if (has(t.announcement) && st(t) !== "closed") addPost(card, row, t);
       app.appendChild(card);
     });
     footer();
+  }
+
+  /* Текст поста для Slack (F-29, 20.11.2026): «Текст поста» раскрывает текст и «Скопировать». Метка {ссылка} — полный
+     адрес теста от адреса этой страницы (верен и после переноса каталога). Копирование не удалось — текст выделяется. */
+  function postText(t) {
+    var url; try { url = new URL(href(t.slug), location.href).href; } catch (e) { url = href(t.slug); }
+    return String(t.announcement).split("{ссылка}").join(url);
+  }
+  function addPost(card, row, t) {
+    var btn = el("button", "btn btn2", "Текст поста"); btn.type = "button"; btn.setAttribute("aria-expanded", "false");
+    row.appendChild(btn);
+    var box = null;
+    btn.onclick = function () {
+      if (box) { box.remove(); box = null; btn.setAttribute("aria-expanded", "false"); return; }
+      box = el("div", "post");
+      var pre = el("pre", "post-text", postText(t)); box.appendChild(pre);
+      var r = el("div", "row"), copy = el("button", "btn", "Скопировать"), ok = el("span", "post-ok");
+      copy.type = "button"; r.appendChild(copy); r.appendChild(ok); box.appendChild(r);
+      copy.onclick = function () {
+        var text = pre.textContent;
+        var done = function () { ok.textContent = "Скопировано — вставьте в Slack"; };
+        var manual = function () {
+          var rg = document.createRange(); rg.selectNodeContents(pre);
+          var sel = getSelection(); sel.removeAllRanges(); sel.addRange(rg);
+          var res = false; try { res = document.execCommand("copy"); } catch (e) {}
+          ok.textContent = res ? "Скопировано — вставьте в Slack" : "Текст выделен — скопируйте его вручную";
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, manual);
+        else manual();
+      };
+      card.appendChild(box); btn.setAttribute("aria-expanded", "true");
+    };
   }
 
   if (data.page === "tests-feature") {
