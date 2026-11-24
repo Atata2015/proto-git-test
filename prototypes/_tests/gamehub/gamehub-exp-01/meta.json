@@ -2,7 +2,7 @@
   "test_id": "gamehub-exp-01",
   "feature": "gamehub",
   "title": "Геймхаб: рекомендованные задания",
-  "status": "draft",
+  "status": "pilot",
   "mode": "shared",
   "demo": false,
   "endpoint": "https://script.google.com/macros/s/AKfycbzdO-bBaLGWyMNOub8NUtQcFH6Esfj6h8TtMNtH-Iqel0TVFU7FUFgBjuuTcbtEhl8IGw/exec",
@@ -17,13 +17,17 @@
   },
   "version": 2,
   "created_at": "2026-11-24T14:34:02.882+00:00",
-  "updated_at": "2026-11-24T15:08:57.643+00:00",
+  "updated_at": "2026-11-24T15:24:37.256+00:00",
   "sha256": "0e80ecfae856527b09ce9495181ad70cc022b911ceabb3ec2ca24d477570b0f7",
   "size": 3956849,
   "history": [
     {
       "status": "draft",
       "at": "2026-11-24T14:34:02.882+00:00"
+    },
+    {
+      "status": "pilot",
+      "at": "2026-11-24T15:24:37.256+00:00"
     }
   ],
   "announcement": "Привет! Помогите проверить новое окно с рекомендованными заданиями — короткий тест в прототипе игры, около 15 минут.\n\nСсылка: {ссылка}\n\n• открывайте на телефоне, держите его горизонтально;\n• пройдите тест один раз;\n• до 27 ноября.\n\nЕсли что-то не открывается или зависло — пишите мне в личку."
