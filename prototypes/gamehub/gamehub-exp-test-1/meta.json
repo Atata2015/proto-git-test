@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-11-24T13:15:39.387+00:00",
+  "title": "Gamehub_exp_test_1",
+  "feature": "gamehub",
+  "prototype": "gamehub-exp-test-1",
+  "version": 1,
+  "updated_at": "2026-11-24T13:15:39.387+00:00",
+  "sha256": "36fc934e86936c04aeb41bb3cbae4453a78d57b655a0d2a7a6ffe20a5d3f213c",
+  "size": 3825202,
+  "description": "Геймхаб «Рекомендованные задания»: выбор и отслеживание задания, переход к выполнению, получение награды, прогресс категорий и подсказки — для юзер-теста gamehub-exp-01.",
+  "figma_url": "https://www.figma.com/design/5xwdEKxqLM6H9DbqfvGwu3/-SYSTEM--UI-Kit--Test-?node-id=4657-1851"
+}
