@@ -11,7 +11,7 @@
   Публикатор (UserTests-Pipeline, skills/user-test/scripts/publish_test.py) заменяет единственную метку данных
   внутри <script id="tests-data"> на JSON с данными страницы, заменив в JSON каждое "</" на "<\/". Вся вёрстка — здесь.
   Вид повторяет общий шаблон каталога (_templates/index-template.html); CSS вкладок совпадает с вставкой ut-tabs в нём.
-  Шаблон-версия: 5
+  Шаблон-версия: 6
 -->
 <style>
 :root{--bg:#f6f6f4;--card:#fff;--ink:#1d1d1b;--muted:#6b6b66;--line:#e3e2dd;--accent:#3355ff;--chip:#eef0ff;
@@ -32,6 +32,9 @@ h1{font-size:28px;line-height:1.2;margin:0 0 6px}.lead{color:var(--muted);margin
 .btn{display:inline-block;padding:8px 14px;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;font-size:14px}
 .btn.btn2{background:transparent;color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 @media (prefers-color-scheme:dark){.btn{color:#111}}
+.fresh{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:8px;font-size:12px;font-weight:600;vertical-align:middle;background:var(--accent);color:#fff}
+@media (prefers-color-scheme:dark){.fresh{color:#111}}
+.newest{font-size:13px;margin-top:4px}
 .chips{margin-top:8px}
 .chip{display:inline-block;border-radius:8px;padding:2px 10px;margin:0 6px 6px 0;font-size:13px;background:var(--chip)}
 .st-live{background:var(--live-bg);color:var(--live);font-weight:600}.st-pilot{background:var(--pilot-bg);color:var(--pilot);font-weight:600}
@@ -47,7 +50,7 @@ button.btn{border:0;cursor:pointer;font-family:inherit;line-height:1.5}
 </head>
 <body>
 <main id="app"><noscript><p class="noscript">Для просмотра страницы включите JavaScript.</p></noscript></main>
-<script id="tests-data" type="application/json">{"schema":2,"catalog_title":"Прототипы (тест)","link_style":"dir","generated_at":"2026-11-23T12:56:24.604+00:00","page":"tests-feature","feature":"recommended-tasks-ut","features":[{"slug":"recommended-tasks-ut","title":"Рекомендованные задания (юзер-тест)","description":"Рекомендованные задания (OneState) для юзер-теста: планшет с заданиями, отслеживание на HUD, прогресс по задачам и целям.","created_at":"2026-11-16T09:27:07.440+00:00","updated_at":"2026-11-16T09:27:07.440+00:00","tests":[{"title":"Рекомендованные задания","status":"closed","mode":"shared","demo":false,"scenarios":6,"prototype":{"feature":"recommended-tasks-ut","prototype":"prototype-2","version":1,"in_catalog":true,"title":"Prototype_2","feature_title":"Рекомендованные задания (юзер-тест)"},"report":{"updated_at":"2026-11-23T12:55:32.285+00:00","size":7256700},"report_full":{"updated_at":"2026-11-23T12:56:23.907+00:00","size":7294595},"created_at":"2026-11-16T09:27:07.440+00:00","updated_at":"2026-11-17T08:40:47.421+00:00","version":1,"slug":"recommended-tasks-01"},{"title":"Рекомендованные задания","status":"closed","mode":"shared","demo":false,"scenarios":6,"prototype":{"feature":"recommended-tasks-ut","prototype":"prototype-2","version":1,"in_catalog":true,"title":"Prototype_2","feature_title":"Рекомендованные задания (юзер-тест)"},"created_at":"2026-11-17T16:05:02.773+00:00","updated_at":"2026-11-18T14:23:34.961+00:00","version":1,"slug":"recommended-tasks-02"}]}]}</script>
+<script id="tests-data" type="application/json">{"schema":2,"catalog_title":"Прототипы (тест)","link_style":"dir","generated_at":"2026-11-25T13:34:19.660+00:00","page":"tests-feature","feature":"recommended-tasks-ut","features":[{"slug":"recommended-tasks-ut","title":"Рекомендованные задания (юзер-тест)","description":"Рекомендованные задания (OneState) для юзер-теста: планшет с заданиями, отслеживание на HUD, прогресс по задачам и целям.","created_at":"2026-11-16T09:27:07.440+00:00","updated_at":"2026-11-16T09:27:07.440+00:00","tests":[{"title":"Рекомендованные задания","status":"closed","mode":"shared","demo":false,"scenarios":6,"prototype":{"feature":"recommended-tasks-ut","prototype":"prototype-2","version":1,"in_catalog":true,"title":"Prototype_2","feature_title":"Рекомендованные задания (юзер-тест)"},"report":{"updated_at":"2026-11-23T12:55:32.285+00:00","size":7256700},"report_full":{"updated_at":"2026-11-23T12:56:23.907+00:00","size":7294595},"created_at":"2026-11-16T09:27:07.440+00:00","updated_at":"2026-11-17T08:40:47.421+00:00","version":1,"slug":"recommended-tasks-01"},{"title":"Рекомендованные задания","status":"closed","mode":"shared","demo":false,"scenarios":6,"prototype":{"feature":"recommended-tasks-ut","prototype":"prototype-2","version":1,"in_catalog":true,"title":"Prototype_2","feature_title":"Рекомендованные задания (юзер-тест)"},"created_at":"2026-11-17T16:05:02.773+00:00","updated_at":"2026-11-18T14:23:34.961+00:00","version":1,"slug":"recommended-tasks-02"}]}]}</script>
 <script>
 (function () {
   "use strict";
@@ -74,6 +77,21 @@ button.btn{border:0;cursor:pointer;font-family:inherit;line-height:1.5}
     if (n % 10 === 1 && n % 100 !== 11) return one;
     if (n % 10 >= 2 && n % 10 <= 4 && !(n % 100 >= 12 && n % 100 <= 14)) return few;
     return many;
+  }
+  // «новый» / «обновлён» — 3 дня; свежее — сверху (разбор прогона 24.11.2026, F-01: новый прототип искали внизу списка)
+  var FRESH_MS = 3 * 24 * 3600 * 1000;
+  function ageMs(iso) { var t = Date.parse(String(iso || "")); return isNaN(t) ? Infinity : Date.now() - t; }
+  function freshness(x) { return ageMs(x.created_at) < FRESH_MS ? "новый" : ageMs(x.updated_at) < FRESH_MS ? "обновлён" : ""; }
+  function stamp(x) { return String(x.updated_at || x.created_at || ""); }
+  function titleWithBadge(x, text) {
+    var h = el("h2", null, text), f = freshness(x);
+    if (f) h.appendChild(el("span", "fresh", f));
+    return h;
+  }
+  function newestLine(list, name) {
+    var n = list.slice().sort(function (a, b) { return stamp(b).localeCompare(stamp(a)); })[0];
+    if (!n || !freshness(n)) return null;
+    return el("div", "newest", "Новое: " + name(n) + " · " + fmtDate(stamp(n)));
   }
   function lastUpdate(f) {
     var u = String(f.updated_at || "");
@@ -107,6 +125,8 @@ button.btn{border:0;cursor:pointer;font-family:inherit;line-height:1.5}
       card.appendChild(el("h2", null, has(f.title) ? f.title : f.slug));
       var upd = lastUpdate(f);
       card.appendChild(el("div", "meta", n + " " + plural(n, "тест", "теста", "тестов") + (upd ? " · обновлено " + fmtDate(upd) : "")));
+      var nl = newestLine(tests, function (t) { return has(t.title) ? t.title : t.slug; });
+      if (nl) card.appendChild(nl);
       if (has(f.description)) card.appendChild(el("p", "desc", f.description));
       var active = tests.filter(function (t) { return st(t) === "live" || st(t) === "pilot"; });
       if (active.length) {
@@ -130,7 +150,7 @@ button.btn{border:0;cursor:pointer;font-family:inherit;line-height:1.5}
       return (ORDER[st(a)] - ORDER[st(b)]) || String(b.updated_at || "").localeCompare(String(a.updated_at || ""));
     }).forEach(function (t) {
       var card = el("div", "card");
-      card.appendChild(el("h2", null, has(t.title) ? t.title : t.slug));
+      card.appendChild(titleWithBadge(t, has(t.title) ? t.title : t.slug));
       var bits = ["v" + (has(t.version) ? t.version : 1)];
       if (has(t.scenarios)) bits.push(t.scenarios + " " + plural(t.scenarios, "задание", "задания", "заданий"));
       if (has(t.mode)) bits.push(MODE[t.mode] || t.mode);

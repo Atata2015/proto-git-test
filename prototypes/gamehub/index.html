@@ -10,7 +10,7 @@
   Публикующий скилл (Claude, ChatGPT или любой другой) ничего здесь не меняет, кроме одного:
   заменяет единственную метку данных внутри <script id="prototypes-data"> ниже на JSON с данными страницы (формат — в документации,
   раздел «Формат данных»), заменив в JSON каждое "</" на "<\/". Вся вёрстка и логика — здесь.
-  Шаблон-версия: 1
+  Шаблон-версия: 2
 -->
 <style>
 :root{--bg:#f6f6f4;--card:#fff;--ink:#1d1d1b;--muted:#6b6b66;--line:#e3e2dd;--accent:#3355ff;--chip:#eef0ff;color-scheme:light}
@@ -31,13 +31,16 @@ h1{font-size:28px;line-height:1.2;margin:0 0 6px}.lead{color:var(--muted);margin
 .frozen{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px}
 .frozen h3{font-size:13px;font-weight:600;color:var(--muted);margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em}
 .chip{display:inline-block;background:var(--chip);border-radius:8px;padding:4px 10px;margin:0 6px 6px 0;font-size:14px}
+.fresh{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:8px;font-size:12px;font-weight:600;vertical-align:middle;background:var(--accent);color:#fff}
+@media (prefers-color-scheme:dark){.fresh{color:#111}}
+.newest{font-size:13px;margin-top:4px}
 .empty{color:var(--muted)}footer{margin-top:32px;font-size:12px;color:var(--muted)}
 .noscript{color:var(--muted)}
 </style>
 </head>
 <body>
 <main id="app"><noscript><p class="noscript">Для просмотра страницы включите JavaScript.</p></noscript></main>
-<script id="prototypes-data" type="application/json">{"schema":1,"page":"feature","feature":"gamehub","catalog_title":"Прототипы (тест)","link_style":"dir","generated_at":"2026-11-24T13:15:40.113+00:00","features":[{"slug":"gamehub","title":"Gamehub","description":"Gamehub — планшет с заданиями и разделами активностей (OneState).","created_at":"2026-11-19T07:48:40.638+00:00","updated_at":"2026-11-24T13:15:39.387+00:00","prototypes":[{"slug":"gamehub-exp-test-1","title":"Gamehub_exp_test_1","version":1,"description":"Геймхаб «Рекомендованные задания»: выбор и отслеживание задания, переход к выполнению, получение награды, прогресс категорий и подсказки — для юзер-теста gamehub-exp-01.","figma_url":"https://www.figma.com/design/5xwdEKxqLM6H9DbqfvGwu3/-SYSTEM--UI-Kit--Test-?node-id=4657-1851","created_at":"2026-11-24T13:15:39.387+00:00","updated_at":"2026-11-24T13:15:39.387+00:00"},{"slug":"gamehub-fulltest-1","title":"Gamehub_FullTest_1","version":2,"description":"Gamehub (OneState): лента ежедневных и еженедельных заданий и целей, отслеживание задания на HUD, выполнение и получение награды.","figma_url":"https://www.figma.com/design/5xwdEKxqLM6H9DbqfvGwu3/-SYSTEM--UI-Kit--Test-?node-id=4801-5793","created_at":"2026-11-19T07:48:40.638+00:00","updated_at":"2026-11-19T08:19:38.281+00:00"}]}]}</script>
+<script id="prototypes-data" type="application/json">{"schema":1,"page":"feature","feature":"gamehub","catalog_title":"Прототипы (тест)","link_style":"dir","generated_at":"2026-11-25T13:34:22.155+00:00","features":[{"slug":"gamehub","title":"Gamehub","description":"Gamehub — планшет с заданиями и разделами активностей (OneState).","created_at":"2026-11-19T07:48:40.638+00:00","updated_at":"2026-11-24T13:15:39.387+00:00","prototypes":[{"slug":"gamehub-exp-test-1","title":"Gamehub_exp_test_1","version":1,"description":"Геймхаб «Рекомендованные задания»: выбор и отслеживание задания, переход к выполнению, получение награды, прогресс категорий и подсказки — для юзер-теста gamehub-exp-01.","figma_url":"https://www.figma.com/design/5xwdEKxqLM6H9DbqfvGwu3/-SYSTEM--UI-Kit--Test-?node-id=4657-1851","created_at":"2026-11-24T13:15:39.387+00:00","updated_at":"2026-11-24T13:15:39.387+00:00"},{"slug":"gamehub-fulltest-1","title":"Gamehub_FullTest_1","version":2,"description":"Gamehub (OneState): лента ежедневных и еженедельных заданий и целей, отслеживание задания на HUD, выполнение и получение награды.","figma_url":"https://www.figma.com/design/5xwdEKxqLM6H9DbqfvGwu3/-SYSTEM--UI-Kit--Test-?node-id=4801-5793","created_at":"2026-11-19T07:48:40.638+00:00","updated_at":"2026-11-19T08:19:38.281+00:00"}]}]}</script>
 <script>
 (function () {
   "use strict";
@@ -66,10 +69,25 @@ h1{font-size:28px;line-height:1.2;margin:0 0 6px}.lead{color:var(--muted);margin
     if (n % 10 >= 2 && n % 10 <= 4 && !(n % 100 >= 12 && n % 100 <= 14)) return few;
     return many;
   }
+  // «новый» / «обновлён» — 3 дня; свежее — сверху (разбор прогона 24.11.2026, F-01: новый прототип искали внизу списка)
+  var FRESH_MS = 3 * 24 * 3600 * 1000;
+  function ageMs(iso) { var t = Date.parse(String(iso || "")); return isNaN(t) ? Infinity : Date.now() - t; }
+  function freshness(x) { return ageMs(x.created_at) < FRESH_MS ? "новый" : ageMs(x.updated_at) < FRESH_MS ? "обновлён" : ""; }
+  function stamp(x) { return String(x.updated_at || x.created_at || ""); }
+  function titleWithBadge(x, text) {
+    var h = el("h2", null, text), f = freshness(x);
+    if (f) h.appendChild(el("span", "fresh", f));
+    return h;
+  }
+  function newestLine(list, name) {
+    var n = list.slice().sort(function (a, b) { return stamp(b).localeCompare(stamp(a)); })[0];
+    if (!n || !freshness(n)) return null;
+    return el("div", "newest", "Новое: " + name(n) + " · " + fmtDate(stamp(n)));
+  }
   function orderOf(p) { var o = parseInt(p.order, 10); return isNaN(o) ? 999 : o; }
   function byProto(a, b) {
     return (orderOf(a) - orderOf(b)) ||
-      String(a.created_at || "").localeCompare(String(b.created_at || "")) ||
+      stamp(b).localeCompare(stamp(a)) ||
       String(a.slug).localeCompare(String(b.slug));
   }
   function lastUpdate(f) {
@@ -97,6 +115,8 @@ h1{font-size:28px;line-height:1.2;margin:0 0 6px}.lead{color:var(--muted);margin
       card.appendChild(el("h2", null, has(f.title) ? f.title : f.slug));
       var upd = lastUpdate(f);
       card.appendChild(el("div", "meta", n + " " + plural(n, "прототип", "прототипа", "прототипов") + (upd ? " · обновлено " + fmtDate(upd) : "")));
+      var nl = newestLine(f.prototypes || [], function (p) { return has(p.title) ? p.title : p.slug; });
+      if (nl) card.appendChild(nl);
       if (has(f.description)) card.appendChild(el("p", "desc", f.description));
       app.appendChild(card);
     });
@@ -112,7 +132,7 @@ h1{font-size:28px;line-height:1.2;margin:0 0 6px}.lead{color:var(--muted);margin
     app.appendChild(el("p", "lead", has(f.description) ? f.description : "Прототипы фичи"));
     (f.prototypes || []).slice().sort(byProto).forEach(function (p) {
       var card = el("div", "card");
-      card.appendChild(el("h2", null, has(p.title) ? p.title : p.slug));
+      card.appendChild(titleWithBadge(p, has(p.title) ? p.title : p.slug));
       card.appendChild(el("div", "meta", "v" + (has(p.version) ? p.version : 1) + (has(p.updated_at) ? " · обновлено " + fmtDate(p.updated_at) : "")));
       if (has(p.description)) card.appendChild(el("p", "desc", p.description));
       var row = el("div", "row");
