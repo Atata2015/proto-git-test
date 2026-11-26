@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-11-26T06:17:11.014+00:00",
+  "title": "gamehub-web-test-1",
+  "feature": "gamehub",
+  "prototype": "gamehub-web-test-1",
+  "version": 1,
+  "updated_at": "2026-11-26T06:17:11.014+00:00",
+  "sha256": "5d5cd90c28562bd894f12f376fde0ed51bd399b775f1d1d1b62b032659957d0a",
+  "size": 3824813,
+  "description": "Экран «Рекомендованные задания»: выбор задачи, отслеживание, награда и подсказки",
+  "figma_url": "https://www.figma.com/design/5xwdEKxqLM6H9DbqfvGwu3/-SYSTEM--UI-Kit--Test-?node-id=4657-1851"
+}
