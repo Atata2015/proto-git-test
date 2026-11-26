@@ -1,0 +1,28 @@
+{
+  "test_id": "gamehub-web-01",
+  "feature": "gamehub",
+  "title": "Геймхаб: рекомендованные задания",
+  "status": "draft",
+  "mode": "shared",
+  "demo": false,
+  "endpoint": "https://script.google.com/macros/s/AKfycbzdO-bBaLGWyMNOub8NUtQcFH6Esfj6h8TtMNtH-Iqel0TVFU7FUFgBjuuTcbtEhl8IGw/exec",
+  "scenarios": 5,
+  "prototype": {
+    "feature": "gamehub",
+    "prototype": "gamehub-web-test-1",
+    "in_catalog": true,
+    "title": "gamehub-web-test-1",
+    "feature_title": "Gamehub"
+  },
+  "version": 1,
+  "created_at": "2026-11-26T07:38:56.984+00:00",
+  "updated_at": "2026-11-26T07:38:56.984+00:00",
+  "sha256": "0e47aba083c1b9b714881796c9e28a1c5d8bc9418a6e5438a02999dcfdb3148c",
+  "size": 3954323,
+  "history": [
+    {
+      "status": "draft",
+      "at": "2026-11-26T07:38:56.984+00:00"
+    }
+  ]
+}
