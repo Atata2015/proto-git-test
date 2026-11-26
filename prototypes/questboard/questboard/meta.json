@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-11-26T13:51:23.646+00:00",
+  "title": "Questboard",
+  "feature": "questboard",
+  "prototype": "questboard",
+  "version": 1,
+  "updated_at": "2026-11-26T13:51:23.646+00:00",
+  "sha256": "8accbf0538b7d454b344eb0d866453b0bec63003e7c488bd9e1490a926b57dbe",
+  "size": 3824531,
+  "description": "Геймхаб рекомендованных заданий: выбор и отслеживание задания, переход к выполнению, получение награды, подсказки категорий",
+  "figma_url": "https://www.figma.com/design/5xwdEKxqLM6H9DbqfvGwu3/-SYSTEM--UI-Kit--Test-?node-id=5083-6431"
+}
