@@ -1,0 +1,29 @@
+{
+  "test_id": "questboard-hub-01",
+  "feature": "questboard",
+  "title": "Questboard: выбор и выполнение заданий",
+  "status": "draft",
+  "mode": "shared",
+  "demo": false,
+  "endpoint": "https://script.google.com/macros/s/AKfycbzdO-bBaLGWyMNOub8NUtQcFH6Esfj6h8TtMNtH-Iqel0TVFU7FUFgBjuuTcbtEhl8IGw/exec",
+  "scenarios": 5,
+  "prototype": {
+    "feature": "questboard",
+    "prototype": "questboard",
+    "version": 2,
+    "in_catalog": true,
+    "title": "Questboard",
+    "feature_title": "Questboard"
+  },
+  "version": 1,
+  "created_at": "2026-11-26T14:58:31.719+00:00",
+  "updated_at": "2026-11-26T14:58:31.719+00:00",
+  "sha256": "06e160ce6f4ba1e893b9e413fd00797cab0d2505b4f91bf26fee0175564750d1",
+  "size": 3953681,
+  "history": [
+    {
+      "status": "draft",
+      "at": "2026-11-26T14:58:31.719+00:00"
+    }
+  ]
+}
